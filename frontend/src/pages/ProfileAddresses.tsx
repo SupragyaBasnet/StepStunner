@@ -11,9 +11,11 @@ import {
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const ProfileAddresses: React.FC = () => {
   const { user } = useAuth() as any;
+  const navigate = useNavigate();
   const [addresses, setAddresses] = useState<string[]>([]);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -21,10 +23,20 @@ const ProfileAddresses: React.FC = () => {
     severity: "success" as "success" | "error",
   });
 
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const userData = localStorage.getItem('stepstunnerUser');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
+
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
-        const token = localStorage.getItem("giftcraftToken");
+        const token = localStorage.getItem("stepstunnerToken");
         const res = await fetch("/api/products/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });

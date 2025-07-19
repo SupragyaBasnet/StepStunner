@@ -129,7 +129,7 @@ const Profile: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
         },
         body: JSON.stringify({ name, email, phone: '+977' + phone }),
       });
@@ -167,7 +167,7 @@ const Profile: React.FC = () => {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+              Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
             },
             body: JSON.stringify({ profileImage: base64Image }),
           });
@@ -225,7 +225,7 @@ const Profile: React.FC = () => {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+                Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
               },
               body: JSON.stringify({ profileImage: base64Image }),
             });
@@ -250,7 +250,7 @@ const Profile: React.FC = () => {
       const res = await fetch('/api/auth/profile-image', {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
         },
       });
       if (res.ok) {
@@ -299,7 +299,7 @@ const Profile: React.FC = () => {
     const fetchOrderHistory = async () => {
       try {
         // Try to get userId from localStorage
-        const userData = JSON.parse(localStorage.getItem('giftcraftUser') || '{}');
+        const userData = JSON.parse(localStorage.getItem('stepstunnerUser') || '{}');
         const userId = userData?._id || user?.id || user?.userId;
         if (userId) {
           const res = await fetch(`/api/products/orders?userId=${userId}`);
@@ -335,7 +335,7 @@ const Profile: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
         },
         body: JSON.stringify({ review: reviewText, rating: reviewRating }),
       });
@@ -344,7 +344,7 @@ const Profile: React.FC = () => {
       setOrderHistory((prev) => prev.map((order: any) => order._id === updatedOrder._id ? updatedOrder : order));
       setSnackbar({ open: true, message: 'Review submitted!', severity: 'success' });
       // Trigger product refresh for product cards
-      localStorage.setItem('giftcraftProductsRefresh', 'true');
+      localStorage.setItem('stepstunnerProductsRefresh', 'true');
       handleCloseReviewModal();
     } catch (err: any) {
       setSnackbar({ open: true, message: err.message || 'Failed to submit review', severity: 'error' });
@@ -366,7 +366,7 @@ const Profile: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
         },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
@@ -389,9 +389,9 @@ const Profile: React.FC = () => {
     const fetchProfileImage = async () => {
       try {
         const res = await fetch('/api/auth/profile', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
-          },
+                  headers: {
+          Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
+        },
         });
         const data = await res.json();
         if (res.ok && data.profileImage) {

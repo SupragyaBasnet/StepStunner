@@ -1,15 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, TextField, Button, Paper, Snackbar, Alert } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileOverview: React.FC = () => {
   const { user, setUser } = useAuth() as any;
+  const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone ? user.phone.replace(/^\+977/, '') : '');
   const [editMode, setEditMode] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const userData = localStorage.getItem('stepstunnerUser');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (editMode) {

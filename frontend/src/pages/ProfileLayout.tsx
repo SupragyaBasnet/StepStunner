@@ -54,7 +54,7 @@ export default function ProfileLayout() {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+              Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
             },
             body: JSON.stringify({ profileImage: base64Image }),
           });
@@ -111,7 +111,7 @@ export default function ProfileLayout() {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+                Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
               },
               body: JSON.stringify({ profileImage: base64Image }),
             });
@@ -135,7 +135,7 @@ export default function ProfileLayout() {
     if (deleting) return; // Prevent double execution
     setDeleting(true);
     try {
-      const token = localStorage.getItem('giftcraftToken');
+      const token = localStorage.getItem('stepstunnerToken');
   
       if (!token) {
         setSnackbar({
@@ -159,7 +159,7 @@ export default function ProfileLayout() {
   
       if (res.ok) {
         // ✅ Success: Remove token, clear user, redirect
-        localStorage.removeItem('giftcraftToken');
+        localStorage.removeItem('stepstunnerToken');
         setUser(null);
         // Store flag in sessionStorage to show success message after redirect
         sessionStorage.setItem('accountDeleted', '1');

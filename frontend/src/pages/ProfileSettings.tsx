@@ -15,6 +15,16 @@ const ProfileSettings: React.FC = () => {
 
   const currentPasswordRef = useRef<HTMLInputElement>(null);
 
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const userData = localStorage.getItem('stepstunnerUser');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
+
   useEffect(() => {
     setTimeout(() => {
       currentPasswordRef.current?.focus();

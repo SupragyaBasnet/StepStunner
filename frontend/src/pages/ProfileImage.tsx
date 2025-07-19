@@ -1,16 +1,28 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Avatar, Box, Button, IconButton, Menu, MenuItem, Paper, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { PhotoCamera, PhotoLibrary, Delete } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileImage: React.FC = () => {
   const { user, setUser } = useAuth() as any;
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const userData = localStorage.getItem('stepstunnerUser');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -31,7 +43,7 @@ const ProfileImage: React.FC = () => {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+              Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
             },
             body: JSON.stringify({ profileImage: base64Image }),
           });
@@ -88,7 +100,7 @@ const ProfileImage: React.FC = () => {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+                Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
               },
               body: JSON.stringify({ profileImage: base64Image }),
             });
@@ -113,7 +125,7 @@ const ProfileImage: React.FC = () => {
       const res = await fetch('/api/auth/profile-image', {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('giftcraftToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
         },
       });
       if (res.ok) {
