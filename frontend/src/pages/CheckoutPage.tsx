@@ -102,6 +102,16 @@ const CheckoutPage: React.FC = () => {
 
   const navigate = useNavigate();
 
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const user = localStorage.getItem('stepstunnerUser');
+    if (!token || !user) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
+
   // Determine items to checkout
   const itemsToCheckout = location.state?.items || cartItems;
 

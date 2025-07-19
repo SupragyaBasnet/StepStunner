@@ -37,10 +37,21 @@ const productPrices: Record<string, number> = {
 
 const Profile: React.FC = () => {
   const { user, logout, setUser } = useAuth() as any;
+  const navigate = useNavigate();
   const [tab, setTab] = useState(0);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<string[]>([]); // Initialize as an empty array of strings
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success'|'error'}>({open: false, message: '', severity: 'success'});
+
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const userData = localStorage.getItem('stepstunnerUser');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   // Add state for order history
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
@@ -341,7 +352,6 @@ const Profile: React.FC = () => {
   };
 
   // Change password handler
-  const navigate = useNavigate();
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       setSnackbar({ open: true, message: 'Please fill all fields.', severity: 'error' });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Container,
@@ -19,6 +19,16 @@ const Cart: React.FC = () => {
   const { cartItems, removeFromCart, updateQuantity, getTotalPrice } = useCart();
   const navigate = useNavigate();
   console.log('Cart items from context:', cartItems);
+
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const user = localStorage.getItem('stepstunnerUser');
+    if (!token || !user) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   if (cartItems.length === 0) {
     return (

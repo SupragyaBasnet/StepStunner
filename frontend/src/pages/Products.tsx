@@ -20,11 +20,13 @@ const allCategories = [
 const Products: React.FC = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
+  const brandParam = searchParams.get('brand');
   const navigate = useNavigate();
 
   // Filter state
   const [search, setSearch] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryParam ? [categoryParam] : []);
+  const [selectedBrand, setSelectedBrand] = useState<string>(brandParam || '');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [minRating, setMinRating] = useState<number>(0);
   const [sortBy, setSortBy] = useState('');
@@ -69,6 +71,20 @@ const Products: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
+  // Update filters when URL parameters change
+  useEffect(() => {
+    if (categoryParam) {
+      setSelectedCategories([categoryParam]);
+    } else {
+      setSelectedCategories([]); // Show all categories if no category param
+    }
+    if (brandParam) {
+      setSelectedBrand(brandParam);
+    } else {
+      setSelectedBrand(''); // Clear brand filter if no brand param
+    }
+  }, [categoryParam, brandParam]);
+
   const minProductPrice = products.length > 0 ? Math.min(...products.map(p => p.price)) : 0;
   const maxProductPrice = products.length > 0 ? Math.max(...products.map(p => p.price)) : 0;
 
@@ -82,22 +98,23 @@ const Products: React.FC = () => {
   let filteredProducts = products.filter(product => {
     const prodName = (product.name || '').toLowerCase();
     const prodCategory = (product.category || '').toLowerCase();
+    const prodBrand = (product.brand || '').toLowerCase();
     const prodPrice = typeof product.price === 'number' ? product.price : 0;
     const prodRating = typeof product.rating === 'number' ? product.rating : 0;
 
-    // Optionally hide products with price 0 (uncomment next line if desired)
-    // if (prodPrice === 0) return false;
-
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      selectedCategories.some(
-        (cat) => cat.toLowerCase().replace(/s$/, '') === prodCategory.replace(/s$/, '')
-      );
+    // Category filter: if no categories selected, show all; otherwise match selected categories
+    const matchesCategory = selectedCategories.length === 0 || 
+      selectedCategories.some(cat => cat.toLowerCase() === prodCategory.toLowerCase());
+    
+    // Brand filter: if no brand selected, show all; otherwise match selected brand
+    const matchesBrand = !selectedBrand || 
+      prodBrand.toLowerCase().includes(selectedBrand.toLowerCase().replace(/-/g, ' '));
+    
     const matchesPrice = prodPrice >= priceRange[0] && prodPrice <= priceRange[1];
     const matchesRating = prodRating >= minRating;
     const matchesSearch = prodName.includes(search.toLowerCase());
 
-    return matchesCategory && matchesPrice && matchesRating && matchesSearch;
+    return matchesCategory && matchesBrand && matchesPrice && matchesRating && matchesSearch;
   });
 
   // Sorting logic
@@ -129,6 +146,25 @@ const Products: React.FC = () => {
           />
         ))}
       </FormGroup>
+      
+      {/* Brand Filter */}
+      {selectedBrand && (
+        <>
+          <Typography variant="subtitle2" fontWeight={600} mt={3} mb={1}>Brand</Typography>
+          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2, mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#d72660' }}>
+              {selectedBrand.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </Typography>
+            <Button
+              size="small"
+              onClick={() => setSelectedBrand('')}
+              sx={{ mt: 1, color: '#666', textTransform: 'none' }}
+            >
+              Clear Brand Filter
+            </Button>
+          </Box>
+        </>
+      )}
       {/* Price Range Filter */}
       <Typography variant="subtitle2" fontWeight={600} mt={3} mb={1}>Price Range</Typography>
       <Slider
@@ -158,11 +194,11 @@ const Products: React.FC = () => {
   );
 
   const { addToCart } = useCart();
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({ open: false, message: '', severity: 'success' });
 
   // Debug logging to diagnose why products are not visible
   console.log('Loaded products:', products);
-  console.log('Current filters:', { selectedCategories, priceRange, minRating, search });
+  console.log('Current filters:', { selectedCategories, selectedBrand, priceRange, minRating, search });
   console.log('Filtered products:', filteredProducts);
 
   if (loading) {

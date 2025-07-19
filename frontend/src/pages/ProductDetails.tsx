@@ -195,6 +195,7 @@ const ProductDetails: React.FC = () => {
           message: "Please log in to add to cart.",
           severity: "error",
         });
+        navigate("/login");
         return;
       }
       // Always use MongoDB _id

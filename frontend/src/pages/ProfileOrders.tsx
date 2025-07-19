@@ -26,6 +26,7 @@ import {
 import { styled } from "@mui/material/styles";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const ExpandMore = styled((props: any) => {
   const { expand, ...other } = props;
@@ -47,6 +48,7 @@ const statusColors: Record<string, string> = {
 
 const ProfileOrders = () => {
   const { user } = useAuth() as any;
+  const navigate = useNavigate();
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reviewingOrder, setReviewingOrder] = useState<string | null>(null);
@@ -58,6 +60,16 @@ const ProfileOrders = () => {
     message: string;
     severity: 'success' | 'error';
   }>({ open: false, message: '', severity: 'success' });
+
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('stepstunnerToken');
+    const userData = localStorage.getItem('stepstunnerUser');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const fetchOrderHistory = async () => {
