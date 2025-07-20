@@ -22,6 +22,27 @@ export default defineConfig({
           });
         },
       },
+      "/heels": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/flats": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/sneakers": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+
+      "/assets": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

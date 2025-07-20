@@ -16,7 +16,7 @@ import louisVuittonPink from "../assets/Replica Louis Vuitton White:Pink Time Ou
 import louisVuittonGold from "../assets/Replica Louis Vuitton White:Gold Time Out Sneakers .jpg";
 import louisVuittonLuxury from "../assets/Women's Luxury Trainers LOUIS VUITTON .jpg";
 import louisVuittonTrainer from "../assets/Louis Vuitton Shoes  Lv Trainer Sneaker .jpg";
-import nikeAirforceShadow from "../assets/Nike airforce shadow.jpg";
+import nikeAirforceShadow from "../assets/Nike_airforce_shadow.png";
 import nikeDunkPinkPaisley from "../assets/Nike Dunk Low Pink Paisley Sneakers .jpg";
 import nikePandaDunks from "../assets/Nike Panda Dunks Shoe .jpg";
 import nikeCortez from "../assets/Nike Classic Cortez Women's Leather Sneakers.jpg";

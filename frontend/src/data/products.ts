@@ -6,31 +6,31 @@ import vansCaldrone from "../assets/Vans Caldrone Sneaker .jpg";
 import vansOldSkoolSherpa from "../assets/Vans Unisex Old Skool Sherpa Trainers : Beige Rose Pink .jpg";
 import vansOldSkoolWhite from "../assets/Vans Womens Old Skool True White Shoes .jpg";
 import vansSk8Hi from "../assets/Vans Sk8 Hi .jpg";
-import adidasCampus00s from "../assets/Adidas Originals Campus 00s.jpg";
-import adidasCampus from "../assets/Adidas Campus Sneakers.jpg";
+import adidasCampus00s from "../assets/Adidas_Originals_Campus_00s.png";
+import adidasCampus from "../assets/Adidas_Originals_Campus_00s.png";
 import adidasSambas from "../assets/Pink adidas sambas.jpg";
-import calvinKleinSneaker from "../assets/Calvin Klein Jeans Sneaker in Weiß.jpg";
+import calvinKleinSneaker from "../assets/Calvin_Klein_Jeans_Sneaker_in_Weiß.png";
 import calvinKleinAubrie from "../assets/Calvin Klein Shoes | Calvin Klein Sneakers Aubrie White Logo Low Top Trainers .jpg";
 import calvinKleinWhite from "../assets/Zapatillas CALVIN KLEIN en color bright white black para caballero .jpg";
 import louisVuittonPink from "../assets/Replica Louis Vuitton White:Pink Time Out Sneakers .jpg";
 import louisVuittonGold from "../assets/Replica Louis Vuitton White:Gold Time Out Sneakers .jpg";
 import louisVuittonLuxury from "../assets/Women's Luxury Trainers LOUIS VUITTON .jpg";
-import louisVuittonTrainer from "../assets/Louis Vuitton Shoes  Lv Trainer Sneaker .jpg";
-import nikeAirforceShadow from "../assets/Nike airforce shadow.jpg";
+import louisVuittonTrainer from "../assets/Louis_Vuitton_Shoes__Lv_Trainer_Sneaker.png";
+import nikeAirforceShadow from "../assets/Nike_airforce_shadow.png";
 import nikeDunkPinkPaisley from "../assets/Nike Dunk Low Pink Paisley Sneakers .jpg";
-import nikePandaDunks from "../assets/Nike Panda Dunks Shoe .jpg";
+import nikePandaDunks from "../assets/Nike_Panda_Dunks_Shoe.png";
 import nikeCortez from "../assets/Nike Classic Cortez Women's Leather Sneakers.jpg";
 
 // Heels
-import sloyanHighHeel from "../assets/heels/Sloyan High Heel Sandal in Gold .jpg";
-import steveMaddenEryka from "../assets/heels/Steve Madden Eryka Ankle Strap Sandal in Multi Leather at Nordstrom Rack.jpg";
-import luxuryFashion from "../assets/heels/Luxury fashion & independent designers .jpg";
-import jypseyTan from "../assets/heels/JYPSEY Tan Leather Strappy Stiletto Women's Heel .jpg";
-import milooeyShoes from "../assets/heels/Milooey shoes Women Elegant Open Toe Strappy Heeled Sandal Lace Up Block High Heels Ankle Strap.jpg";
-import chalkOleana from "../assets/heels/Chalk Oleana Clear Trapeze Heel .jpg";
-import jimmyChoo from "../assets/heels/Jimmy Choo us.jpg";
-import steveMaddenManzie from "../assets/heels/Steve Madden Manzie Heeled Sandal Women's Shoes White Zappos.jpg";
-import annieWhite from "../assets/heels/ANNIE White Women's Strappy Square Toe Heel .jpg";
+import sloyanHighHeel from "../assets/heels/Sloyan_High_Heel_Sandal_in_Gold.png";
+import steveMaddenEryka from "../assets/heels/Steve_Madden_Eryka_Ankle_Strap_Sandal_in_Multi_Leather_at_Nordstrom_Rack.png";
+import luxuryFashion from "../assets/heels/Luxury_fashion___independent_designers.png";
+import jypseyTan from "../assets/heels/JYPSEY_Tan_Leather_Strappy_Stiletto_Women_s_Heel.png";
+import milooeyShoes from "../assets/heels/Milooey_shoes_Women_Elegant_Open_Toe_Strappy_Heeled_Sandal_Lace_Up_Block_High_Heels_Ankle_Strap.png";
+import chalkOleana from "../assets/heels/Chalk_Oleana_Clear_Trapeze_Heel.png";
+import jimmyChoo from "../assets/heels/Jimmy_Choo_us.png";
+import steveMaddenManzie from "../assets/heels/Steve_Madden_Manzie_Heeled_Sandal_Women_s_Shoes_White_Zappos.png";
+import annieWhite from "../assets/heels/ANNIE_White_Women_s_Strappy_Square_Toe_Heel.png";
 
 export interface Product {
   id: number;

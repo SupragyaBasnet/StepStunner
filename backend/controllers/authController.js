@@ -1,6 +1,8 @@
 const User = require("../models/User");
+const ActivityLog = require("../models/ActivityLog");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 // Optional: for auto-login after register
 
 exports.register = async (req, res) => {

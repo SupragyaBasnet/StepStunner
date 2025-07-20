@@ -1,5 +1,5 @@
 import { Payment as PaymentIcon } from '@mui/icons-material';
-import { Alert, Box, Button, Card, CardActionArea, CardContent, Container, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Rating, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardActionArea, CardContent, Container, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Paper, Rating, TextField, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Confetti from 'react-confetti';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -99,10 +99,11 @@ const CheckoutPage: React.FC = () => {
   const [reviewRating, setReviewRating] = useState<number | null>(null);
   const [deliveryCharge, setDeliveryCharge] = useState(100);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  // Check authentication
+  // Check authentication and initialize
   useEffect(() => {
     const token = localStorage.getItem('stepstunnerToken');
     const user = localStorage.getItem('stepstunnerUser');
@@ -110,20 +111,47 @@ const CheckoutPage: React.FC = () => {
       navigate('/login');
       return;
     }
+    
+    // Set loading to false after a short delay to ensure cart context is loaded
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [navigate]);
 
+  // Get singleItemId from URL if present
+  const urlParams = new URLSearchParams(location.search);
+  const singleItemId = urlParams.get('singleItemId');
+
   // Determine items to checkout
-  const itemsToCheckout = location.state?.items || cartItems;
+  let itemsToCheckout = location.state?.items || cartItems || [];
+  
+  // If singleItemId is present, find that specific item
+  if (singleItemId && itemsToCheckout.length > 0) {
+    const singleItem = itemsToCheckout.find((item: any) => 
+      item.id === singleItemId || 
+      item._id === singleItemId || 
+      item.cartItemId === singleItemId
+    );
+    if (singleItem) {
+      itemsToCheckout = [singleItem];
+    }
+  }
 
   // Calculate subtotal and total
   const subtotal = itemsToCheckout.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-  
-  // Apply 20% discount for purchases of 5000 or more
-  const discountThreshold = 5000;
-  const discountPercentage = 0.20; // 20%
-  const discountAmount = subtotal >= discountThreshold ? subtotal * discountPercentage : 0;
-  const subtotalAfterDiscount = subtotal - discountAmount;
-  const total = subtotalAfterDiscount + deliveryCharge;
+  const total = subtotal + deliveryCharge;
+
+  // Debug logging
+  console.log('CheckoutPage Debug:', {
+    locationState: location.state,
+    cartItems,
+    singleItemId,
+    itemsToCheckout,
+    subtotal,
+    total
+  });
 
   // Address and payment logic
   const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,25 +313,133 @@ const CheckoutPage: React.FC = () => {
     setDeliveryCharge(getDeliveryCharge(address));
   }, [address]);
 
+  if (isLoading) {
+    return (
+      <Box sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Container maxWidth="md" sx={{ textAlign: 'center', py: 6 }}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: 700, 
+              color: '#d72660',
+              mb: 2
+            }}
+          >
+            Loading Checkout...
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#666' }}>
+            Please wait while we prepare your order.
+          </Typography>
+        </Container>
+      </Box>
+    );
+  }
+
   if (!itemsToCheckout || itemsToCheckout.length === 0) {
     return (
-      <Container maxWidth="md" sx={{ py: 6 }}>
-        <Paper elevation={4} sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h5">No items to checkout.</Typography>
-        </Paper>
-      </Container>
+      <Box sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Container maxWidth="md" sx={{ textAlign: 'center', py: 6 }}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: 700, 
+              color: '#d72660',
+              mb: 2
+            }}
+          >
+            No items to checkout
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#666', mb: 3 }}>
+            Please add some items to your cart first.
+          </Typography>
+          <Button
+            variant="contained"
+            size="medium"
+            onClick={() => navigate('/products')}
+            sx={{
+              fontWeight: 600,
+              px: 4,
+              py: 1.5,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #d72660 0%, #b71c4a 100%)',
+              boxShadow: '0 4px 16px rgba(215, 38, 96, 0.3)',
+              '&:hover': { 
+                background: 'linear-gradient(135deg, #b71c4a 0%, #8e1a3a 100%)',
+                boxShadow: '0 6px 20px rgba(215, 38, 96, 0.4)',
+                transform: 'translateY(-1px)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Browse Products
+          </Button>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4 }}>
-        {!orderConfirmedMessage && (
-          <Typography variant="h3" align="center" gutterBottom sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.2rem' }, color: '#111', mb: 0 }}>
-            Proceed to Checkout
+    <Box sx={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      py: { xs: 3, md: 4 }
+    }}>
+      <Container maxWidth="lg">
+        {/* Header Section */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          {!orderConfirmedMessage && (
+            <Typography 
+              variant="h2" 
+              component="h1" 
+              sx={{ 
+                fontWeight: 800, 
+                fontSize: { xs: '2rem', md: '2.5rem' }, 
+                color: '#1a1a1a',
+                mb: 2,
+                background: 'linear-gradient(135deg, #d72660 0%, #b71c4a 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Proceed to Checkout
+            </Typography>
+          )}
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#666',
+              fontWeight: 400,
+              mb: 3
+            }}
+          >
+            Complete your purchase securely
           </Typography>
-        )}
-        <div className="heading-dash" />
+        </Box>
+        
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: { xs: 3, md: 4 }, 
+            mb: 4, 
+            borderRadius: 3,
+            bgcolor: 'white',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}
+        >
         {orderConfirmedMessage ? (
           <Box sx={{ textAlign: 'center', mt: 3, opacity: 0, animation: 'fadeIn 0.5s ease-in-out forwards', '@keyframes fadeIn': { '0%': { opacity: 0 }, '100%': { opacity: 1 } } }}>
             {orderConfirmedMessage.toLowerCase().includes('failed') ? (
@@ -325,71 +461,154 @@ const CheckoutPage: React.FC = () => {
         ) : (
           <>
             {/* Item Details Summary */}
-            <Box sx={{ mb: 3, borderBottom: '1px solid #eee', pb: 2 }}>
-              <Typography variant="h6" fontWeight={700}>Item Summary:</Typography>
+            <Box sx={{ mb: 4, pb: 3, borderBottom: '2px solid #f0f0f0' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#1a1a1a',
+                  mb: 3,
+                  borderBottom: '2px solid #d72660',
+                  pb: 1,
+                  display: 'inline-block'
+                }}
+              >
+                Item Summary
+              </Typography>
               {itemsToCheckout.map((item: any) => (
-                <Box key={item.id || item._id} sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                  <Box sx={{ width: 80, height: 80, mr: 2 }}>
-                    <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </Box>
-                <Box>
-                    <Typography variant="subtitle1" fontWeight={700}>{item.name}</Typography>
-                    <Typography variant="body2">Quantity: {item.quantity}</Typography>
+                <Box 
+                  key={item.id || item._id} 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    mt: 2,
+                    p: 2,
+                    bgcolor: '#fafafa',
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0'
+                  }}
+                >
+                  <Box sx={{ 
+                    width: 80, 
+                    height: 80, 
+                    mr: 3,
+                    bgcolor: 'white',
+                    borderRadius: 2,
+                    p: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'contain',
+                        borderRadius: 1
+                      }} 
+                    />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 700,
+                        color: '#1a1a1a',
+                        mb: 1
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        color: '#666',
+                        fontWeight: 500
+                      }}
+                    >
+                      Quantity: {item.quantity}
+                    </Typography>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        color: '#d72660',
+                        fontWeight: 700,
+                        mt: 1
+                      }}
+                    >
+                      Rs. {(item.price * item.quantity).toLocaleString('en-IN')}
+                    </Typography>
                   </Box>
                 </Box>
               ))}
             </Box>
             {/* Price Breakdown */}
-            <Box sx={{ mb: 3, borderBottom: '1px solid #eee', pb: 2 }}>
-              <Typography variant="h6" fontWeight={700}>Order Summary:</Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                <Typography variant="body1">Subtotal:</Typography>
-                <Typography variant="body1">Rs. {subtotal}</Typography>
-              </Box>
-              {discountAmount > 0 && (
-                <>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                    <Typography variant="body1" color="success.main" fontWeight={600}>
-                      Discount (20% off on Rs. 5000+):
-                    </Typography>
-                    <Typography variant="body1" color="success.main" fontWeight={600}>
-                      -Rs. {discountAmount}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                    <Typography variant="body1">Subtotal after discount:</Typography>
-                    <Typography variant="body1">Rs. {subtotalAfterDiscount}</Typography>
-                  </Box>
-                </>
-              )}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                <Typography variant="body1">Delivery Charge:</Typography>
-                <Typography variant="body1">Rs. {deliveryCharge}</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                <Typography variant="h6" fontWeight={700}>Total:</Typography>
-                <Typography variant="h6" fontWeight={700}>Rs. {total}</Typography>
-              </Box>
-              {discountAmount > 0 && (
-                <Box sx={{ 
-                  mt: 2, 
-                  p: 2, 
-                  bgcolor: 'success.light', 
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'success.main'
-                }}>
-                  <Typography variant="body2" color="success.dark" fontWeight={600}>
-                    🎉 You saved Rs. {discountAmount} with our 20% discount offer!
+            <Box sx={{ mb: 4, pb: 3, borderBottom: '2px solid #f0f0f0' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#1a1a1a',
+                  mb: 3,
+                  borderBottom: '2px solid #d72660',
+                  pb: 1,
+                  display: 'inline-block'
+                }}
+              >
+                Order Summary
+              </Typography>
+              <Box sx={{ 
+                bgcolor: '#fafafa',
+                p: 3,
+                borderRadius: 2,
+                border: '1px solid #e0e0e0'
+              }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#333' }}>
+                    Subtotal:
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#333' }}>
+                    Rs. {subtotal.toLocaleString('en-IN')}
                   </Typography>
                 </Box>
-              )}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#333' }}>
+                    Delivery Charge:
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#333' }}>
+                    Rs. {deliveryCharge}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 2, borderColor: '#d72660' }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a1a' }}>
+                    Total:
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#d72660' }}>
+                    Rs. {total.toLocaleString('en-IN')}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
             {/* Address Section */}
-            <Box sx={{ mb: 3, borderBottom: '1px solid #eee', pb: 2 }}>
-              <Typography variant="h6" fontWeight={700}>Delivery Address:</Typography>
+            <Box sx={{ mb: 4, pb: 3, borderBottom: '2px solid #f0f0f0' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#1a1a1a',
+                  mb: 3,
+                  borderBottom: '2px solid #d72660',
+                  pb: 1,
+                  display: 'inline-block'
+                }}
+              >
+                Delivery Address
+              </Typography>
               {addressError && (
-                <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 2 }}>
                   {addressError}
                 </Alert>
               )}
@@ -405,33 +624,62 @@ const CheckoutPage: React.FC = () => {
                   placeholder="Enter your complete delivery address"
                   error={!!addressError}
                   helperText={addressError}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#d72660',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#d72660',
+                      },
+                    },
+                  }}
                 />
               </Box>
             </Box>
             {/* Payment Methods Section */}
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>Choose Payment Method:</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 2 }}>
+            <Box sx={{ mb: 4 }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#1a1a1a',
+                  mb: 3,
+                  borderBottom: '2px solid #d72660',
+                  pb: 1,
+                  display: 'inline-block'
+                }}
+              >
+                Choose Payment Method
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3, mt: 2 }}>
                 {/* eSewa */}
                 <Card 
-                  elevation={2} 
+                  elevation={0} 
                   sx={{
-                    border: selectedPaymentMethod === 'eSewa' ? '2px solid #F46A6A' : '1px solid #eee', // Highlight selected
+                    border: selectedPaymentMethod === 'eSewa' ? '2px solid #d72660' : '1px solid #e0e0e0',
+                    borderRadius: 2,
+                    bgcolor: selectedPaymentMethod === 'eSewa' ? '#fff5f5' : 'white',
+                    transition: 'all 0.3s ease',
                     '&:hover': {
-                      borderColor: '#F46A6A',
-                      boxShadow: 3
+                      borderColor: '#d72660',
+                      boxShadow: '0 4px 12px rgba(215, 38, 96, 0.15)',
+                      transform: 'translateY(-2px)'
                     }
                   }}
                 >
                   <CardActionArea onClick={() => handlePaymentMethodSelect('eSewa')}>
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-                      {/* Use actual logo */}
+                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                       <Box sx={{ 
-                        width: 40, 
-                        height: 40,
+                        width: 50, 
+                        height: 50,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        p: 1
                       }}>
                         <Box 
                           component="img" 
@@ -441,8 +689,12 @@ const CheckoutPage: React.FC = () => {
                         />
                       </Box>
                       <Box>
-                        <Typography variant="h6" fontWeight={600}>eSewa</Typography>
-                        <Typography variant="body2" color="text.secondary">Digital Wallet</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+                          eSewa
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#666' }}>
+                          Digital Wallet
+                        </Typography>
                       </Box>
                     </CardContent>
                   </CardActionArea>
@@ -450,23 +702,26 @@ const CheckoutPage: React.FC = () => {
 
                 {/* Cash on Delivery */}
                 <Card 
-                  elevation={2} 
+                  elevation={0} 
                   sx={{
-                    border: selectedPaymentMethod === 'Cash on Delivery' ? '2px solid #F46A6A' : '1px solid #eee', // Highlight selected
+                    border: selectedPaymentMethod === 'Cash on Delivery' ? '2px solid #d72660' : '1px solid #e0e0e0',
+                    borderRadius: 2,
+                    bgcolor: selectedPaymentMethod === 'Cash on Delivery' ? '#fff5f5' : 'white',
+                    transition: 'all 0.3s ease',
                     '&:hover': {
-                      borderColor: '#F46A6A',
-                      boxShadow: 3
+                      borderColor: '#d72660',
+                      boxShadow: '0 4px 12px rgba(215, 38, 96, 0.15)',
+                      transform: 'translateY(-2px)'
                     }
                   }}
                 >
                   <CardActionArea onClick={() => handlePaymentMethodSelect('Cash on Delivery')}>
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-                      {/* Use placeholder icon for COD */}
+                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                       <Box sx={{ 
-                        width: 40, 
-                        height: 40, 
-                        bgcolor: '#2E7D32', 
-                        borderRadius: '50%',
+                        width: 50, 
+                        height: 50, 
+                        bgcolor: '#d72660', 
+                        borderRadius: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -475,8 +730,12 @@ const CheckoutPage: React.FC = () => {
                         <PaymentIcon />
                       </Box>
                       <Box>
-                        <Typography variant="h6" fontWeight={600}>Cash on Delivery</Typography>
-                        <Typography variant="body2" color="text.secondary">Pay when you receive</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+                          Cash on Delivery
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#666' }}>
+                          Pay when you receive
+                        </Typography>
                       </Box>
                     </CardContent>
                   </CardActionArea>
@@ -484,18 +743,30 @@ const CheckoutPage: React.FC = () => {
               </Box>
             </Box>
             {/* Actions */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 4 }}>
               <Button 
                 variant="contained" 
-                color="primary"
                 size="large" 
                 sx={{
-                  mt: 3,
-                  backgroundColor: 'rgb(255,106,106)',
-                  '&:hover': { backgroundColor: 'rgb(220,80,80)' },
-                  maxWidth: 320,
-                  fontWeight: 700,borderRadius: 7,width:200,
-                  alignSelf: 'center'
+                  px: 6,
+                  py: 2,
+                  borderRadius: 3,
+                  width: { xs: '100%', sm: 300 },
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  background: 'linear-gradient(135deg, #d72660 0%, #b71c4a 100%)',
+                  boxShadow: '0 8px 32px rgba(215, 38, 96, 0.3)',
+                  '&:hover': { 
+                    background: 'linear-gradient(135deg, #b71c4a 0%, #8e1a3a 100%)',
+                    boxShadow: '0 12px 40px rgba(215, 38, 96, 0.4)',
+                    transform: 'translateY(-2px)'
+                  },
+                  '&:disabled': {
+                    background: '#ccc',
+                    boxShadow: 'none',
+                    transform: 'none'
+                  },
+                  transition: 'all 0.3s ease'
                 }}
                 disabled={!isConfirmButtonEnabled || isRedirecting}
                 onClick={handleConfirmOrder}
@@ -509,41 +780,42 @@ const CheckoutPage: React.FC = () => {
             </Box>
           </>
         )}
-      </Paper>
+        </Paper>
 
-      {/* Review Modal */}
-      <Dialog open={openReviewModal} onClose={handleCloseReviewModal}>
-        <DialogTitle>Leave a Review</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <Typography component="legend">Your Rating</Typography>
-            <Rating
-              name="review-rating"
-              value={reviewRating}
-              onChange={(event, newValue) => {
-                setReviewRating(newValue);
-              }}
-            />
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Your Review"
-              type="text"
-              fullWidth
-              multiline
-              rows={4}
-              variant="outlined"
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseReviewModal} color="secondary">Cancel</Button>
-          <Button onClick={handleSubmitReview} color="primary" disabled={!reviewText.trim() || reviewRating === null}>Submit Review</Button> {/* Disable submit if no rating or review text */}
-        </DialogActions>
-      </Dialog>
-    </Container>
+        {/* Review Modal */}
+        <Dialog open={openReviewModal} onClose={handleCloseReviewModal}>
+          <DialogTitle>Leave a Review</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Typography component="legend">Your Rating</Typography>
+              <Rating
+                name="review-rating"
+                value={reviewRating}
+                onChange={(event, newValue) => {
+                  setReviewRating(newValue);
+                }}
+              />
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Your Review"
+                type="text"
+                fullWidth
+                multiline
+                rows={4}
+                variant="outlined"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseReviewModal} color="secondary">Cancel</Button>
+            <Button onClick={handleSubmitReview} color="primary" disabled={!reviewText.trim() || reviewRating === null}>Submit Review</Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </Box>
   );
 };
 

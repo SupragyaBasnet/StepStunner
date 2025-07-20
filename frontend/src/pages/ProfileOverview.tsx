@@ -111,8 +111,8 @@ const ProfileOverview: React.FC = () => {
             variant="outlined"
             sx={{
               display: 'flex', justifyContent: 'center', mt: 3,
-              color: 'rgb(255,106,106)',
-              borderColor: 'rgb(255,106,106)',
+              color: '#d72660',
+              borderColor: '#d72660',
               
               borderRadius: 50,
               px: 4,
@@ -122,8 +122,8 @@ const ProfileOverview: React.FC = () => {
               mx: 'auto',
               '&:hover': {
                 color: 'white',
-                backgroundColor: 'rgb(255,106,106)',
-                borderColor: 'rgb(255,106,106)',
+                backgroundColor: '#d72660',
+                borderColor: '#d72660',
               },
             }}
             onClick={handleEdit}
@@ -138,13 +138,13 @@ const ProfileOverview: React.FC = () => {
               type="submit"
               variant="contained"
               sx={{
-                backgroundColor: 'rgb(255,106,106)',
+                backgroundColor: '#d72660',
                 color: 'white',
                 borderRadius: 50,
                 px: 4,
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                '&:hover': { backgroundColor: 'rgb(220,80,80)' },
+                '&:hover': { backgroundColor: '#b71c4a' },
               }}
               fullWidth
             >
@@ -152,13 +152,16 @@ const ProfileOverview: React.FC = () => {
             </Button>
             <Button
               variant="text"
-              color="secondary"
               onClick={handleCancelEdit}
               sx={{
+                color: '#d72660',
                 borderRadius: 50,
                 px: 4,
                 fontWeight: 700,
                 textTransform: 'uppercase',
+                '&:hover': {
+                  backgroundColor: 'rgba(215, 38, 96, 0.1)',
+                },
               }}
               fullWidth
             >

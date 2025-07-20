@@ -110,6 +110,7 @@ const ProductDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const [mainIdx, setMainIdx] = useState(0);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -118,6 +119,9 @@ const ProductDetails: React.FC = () => {
   }>({ open: false, message: "", severity: "success" });
   const { addToCart } = useCart();
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+
+  // Available shoe sizes
+  const availableSizes = ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'];
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -299,14 +303,16 @@ const ProductDetails: React.FC = () => {
       : [product?.image || ""];
 
   return (
-    <Container maxWidth="md" sx={{ py: 8 }}>
-      <Grid container spacing={4}>
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Grid container spacing={6}>
         <Grid item xs={12} md={6}>
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              position: "sticky",
+              top: 20,
             }}
           >
             <Box
@@ -314,123 +320,220 @@ const ProductDetails: React.FC = () => {
               src={product.image}
               alt={product.name || ""}
               sx={{
-                width: 350,
-                height: 350,
-                borderRadius: 4,
-                boxShadow: 3,
-                mb: 2,
+                width: "100%",
+                maxWidth: 450,
+                height: 450,
+                borderRadius: 3,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
                 objectFit: "contain",
                 bgcolor: "white",
-                p: 0,
-                m: 0,
-                display: "block",
+                p: 2,
+                border: "1px solid #f0f0f0",
+                transition: "transform 0.2s ease",
+                "&:hover": {
+                  transform: "scale(1.02)",
+                },
               }}
             />
-            {/* Thumbnails of related products removed for now (no products array) */}
           </Box>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Typography variant="h4" fontWeight={900} gutterBottom>
-            {product.name || "Product Name"}
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-            <Rating
-              value={product.rating}
-              precision={0.5}
-              readOnly
-              size="medium"
-            />
-            <Typography variant="body2" color="text.secondary">
-              ({product.reviews || 0})
+          <Box sx={{ pl: { md: 2 } }}>
+            <Typography 
+              variant="h3" 
+              fontWeight={800} 
+              gutterBottom
+              sx={{ 
+                color: '#333',
+                fontSize: { xs: '1.8rem', md: '2.2rem' },
+                lineHeight: 1.2,
+                mb: 2
+              }}
+            >
+              {product.name || "Product Name"}
             </Typography>
-          </Stack>
-          <Typography
-            variant="h5"
-            color="primary"
-            fontWeight={700}
-            sx={{ mb: 2 }}
+            
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+              <Rating
+                value={product.rating || 0}
+                precision={0.5}
+                readOnly
+                size="large"
+                sx={{ color: '#ffd700' }}
+              />
+              <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                ({product.reviews || 0} reviews)
+              </Typography>
+            </Stack>
+            
+            <Typography
+              variant="h4"
+              sx={{ 
+                mb: 3,
+                color: "#d72660",
+                fontWeight: 800,
+                fontSize: { xs: '1.8rem', md: '2.2rem' }
+              }}
+            >
+              Rs. {product.price ? product.price.toLocaleString("en-IN") : "N/A"}
+            </Typography>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              mb: 3,
+              color: '#666',
+              fontSize: '1.1rem',
+              lineHeight: 1.6,
+              fontWeight: 400
+            }}
           >
-            Rs. {product.price ? product.price.toLocaleString("en-IN") : "N/A"}
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
             {product.description || "No description available."}
           </Typography>
-          <Typography variant="subtitle2" color="success.main" sx={{ mb: 2 }}>
-            In Stock
+          <Typography variant="subtitle2" color="success.main" sx={{ mb: 3, fontWeight: 600 }}>
+            ✓ In Stock
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", my: 2 }}>
+          
+          {/* Size Selection */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: '#333' }}>
+              Select Size
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {availableSizes.map((size) => (
+                <Button
+                  key={size}
+                  variant={selectedSize === size ? "contained" : "outlined"}
+                  size="small"
+                  onClick={() => setSelectedSize(size)}
+                  sx={{
+                    minWidth: 50,
+                    height: 40,
+                    borderRadius: 2,
+                    borderColor: selectedSize === size ? '#d72660' : '#ddd',
+                    backgroundColor: selectedSize === size ? '#d72660' : 'transparent',
+                    color: selectedSize === size ? 'white' : '#333',
+                    fontWeight: 600,
+                    '&:hover': {
+                      borderColor: '#d72660',
+                      backgroundColor: selectedSize === size ? '#b71c4a' : 'rgba(215, 38, 96, 0.1)',
+                    },
+                  }}
+                >
+                  {size}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Quantity Selector */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mr: 2, fontWeight: 600, color: '#333' }}>
+              Quantity:
+            </Typography>
             <Button
               size="small"
               variant="outlined"
               onClick={() => handleQuantityChange(-1)}
               disabled={quantity <= 1}
-              sx={{ minWidth: 32, px: 0 }}
+              sx={{ 
+                minWidth: 40, 
+                height: 40,
+                borderRadius: 2,
+                borderColor: '#d72660',
+                color: '#d72660',
+                '&:hover': {
+                  borderColor: '#b71c4a',
+                  backgroundColor: 'rgba(215, 38, 96, 0.1)',
+                },
+                '&:disabled': {
+                  borderColor: '#ccc',
+                  color: '#ccc',
+                }
+              }}
             >
               -
             </Button>
-            <span
-              style={{
-                fontWeight: 500,
+            <Typography
+              sx={{
+                fontWeight: 600,
                 margin: "0 16px",
-                fontSize: "0.98rem",
-                color: "#888",
+                fontSize: "1.1rem",
+                color: "#333",
+                minWidth: 30,
+                textAlign: 'center'
               }}
             >
-              Quantity: {quantity}
-            </span>
+              {quantity}
+            </Typography>
             <Button
               size="small"
               variant="outlined"
               onClick={() => handleQuantityChange(1)}
               disabled={quantity >= 10}
-              sx={{ minWidth: 32, px: 0 }}
+              sx={{ 
+                minWidth: 40, 
+                height: 40,
+                borderRadius: 2,
+                borderColor: '#d72660',
+                color: '#d72660',
+                '&:hover': {
+                  borderColor: '#b71c4a',
+                  backgroundColor: 'rgba(215, 38, 96, 0.1)',
+                },
+                '&:disabled': {
+                  borderColor: '#ccc',
+                  color: '#ccc',
+                }
+              }}
             >
               +
             </Button>
           </Box>
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mt: 3 }}>
             <Button
               variant="outlined"
-              color="inherit"
-              size="small"
+              size="large"
               onClick={handleAddToCart}
+              disabled={!selectedSize}
               sx={{
-                mt: 1,
                 fontWeight: 700,
-                px: 3,
-                py: 1.35,
-                borderRadius: 7,
-                width: 200,
-                borderColor: "rgb(255,106,106)",
-                color: "rgb(255,106,106)",
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                flex: 1,
+                borderColor: "#d72660",
+                color: "#d72660",
+                fontSize: '1rem',
+                height: 50,
                 "&:hover": {
-                  borderColor: "rgb(255,100,100)",
-                  backgroundColor: "rgba(220,80,80,0.20)",
+                  borderColor: "#b71c4a",
+                  backgroundColor: "rgba(215, 38, 96, 0.1)",
+                },
+                "&:disabled": {
+                  borderColor: "#ccc",
+                  color: "#ccc",
+                  cursor: "not-allowed",
                 },
               }}
             >
-              ADD TO CART
+              {!selectedSize ? "Select Size First" : "ADD TO CART"}
             </Button>
             <Button
               variant="contained"
-              color="primary"
-              sx={{
-                mt: 1,
-                fontWeight: 700,
-                borderRadius: 7,
-                px: 3,
-                py: 1.35,
-                width: 200,
-                backgroundColor: "rgb(255,106,106)",
-                "&:hover": { backgroundColor: "rgb(220,80,80)" },
-              }}
-              size="small"
+              size="large"
               onClick={() => {
+                if (!selectedSize) {
+                  setSnackbar({
+                    open: true,
+                    message: "Please select a size first.",
+                    severity: "error",
+                  });
+                  return;
+                }
                 if (!product._id) {
                   setSnackbar({
                     open: true,
-                    message:
-                      "This product cannot be ordered. Please contact support.",
+                    message: "This product cannot be ordered. Please contact support.",
                     severity: "error",
                   });
                   return;
@@ -442,6 +545,7 @@ const ProductDetails: React.FC = () => {
                         ...product,
                         _id: product._id,
                         quantity,
+                        size: selectedSize,
                         price: product.price,
                         total: product.price * quantity,
                       },
@@ -449,115 +553,29 @@ const ProductDetails: React.FC = () => {
                   },
                 });
               }}
+              sx={{
+                fontWeight: 700,
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                flex: 1,
+                backgroundColor: "#d72660",
+                fontSize: '1rem',
+                height: 50,
+                "&:hover": { 
+                  backgroundColor: "#b71c4a",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(215, 38, 96, 0.3)",
+                },
+                transition: "all 0.2s ease",
+              }}
             >
-              Buy Now
+              BUY NOW
             </Button>
+          </Box>
           </Box>
         </Grid>
       </Grid>
-      <Box
-        sx={{
-          position: "relative",
-          bgcolor: "#FFF6F6",
-          borderRadius: 3,
-          p: { xs: 3, md: 5 },
-          my: 5,
-          textAlign: "center",
-          boxShadow: 2,
-          maxWidth: 700,
-          mx: "auto",
-          overflow: "visible",
-        }}
-      >
-        {/* Animated hearts left */}
-        <FavoriteIcon
-          sx={{
-            position: "absolute",
-            left: -32,
-            top: 32,
-            color: "#F46A6A",
-            fontSize: 32,
-            opacity: 0.7,
-            animation: `${floatPop} 2.5s ease-in-out infinite`,
-            animationDelay: "0s",
-            display: { xs: "none", sm: "block" },
-          }}
-        />
-        <FavoriteIcon
-          sx={{
-            position: "absolute",
-            left: -24,
-            bottom: 48,
-            color: "#F46A6A",
-            fontSize: 24,
-            opacity: 0.6,
-            animation: `${floatPop} 2.8s ease-in-out infinite`,
-            animationDelay: "0.7s",
-            display: { xs: "none", sm: "block" },
-          }}
-        />
-        {/* Animated hearts right */}
-        <FavoriteIcon
-          sx={{
-            position: "absolute",
-            right: -32,
-            top: 48,
-            color: "#F46A6A",
-            fontSize: 28,
-            opacity: 0.7,
-            animation: `${floatPop} 2.7s ease-in-out infinite`,
-            animationDelay: "0.3s",
-            display: { xs: "none", sm: "block" },
-          }}
-        />
-        <FavoriteIcon
-          sx={{
-            position: "absolute",
-            right: -24,
-            bottom: 32,
-            color: "#F46A6A",
-            fontSize: 36,
-            opacity: 0.6,
-            animation: `${floatPop} 2.9s ease-in-out infinite`,
-            animationDelay: "1.1s",
-            display: { xs: "none", sm: "block" },
-          }}
-        />
-        {/* Hearts row and heading as before */}
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-          {[...Array(5)].map((_, i) => (
-            <FavoriteIcon
-              key={i}
-              sx={{ color: "#F46A6A", mx: 0.5, fontSize: 28, opacity: 0.85 }}
-            />
-          ))}
-        </Box>
-        <Typography
-          variant="h4"
-          fontWeight={900}
-          sx={{
-            mb: 2,
-            color: "#B22234",
-            letterSpacing: "-1px",
-            fontSize: { xs: "1.5rem", md: "2rem" },
-          }}
-        >
-          Why This Gift is Special
-        </Typography>
-        <Typography
-          variant="h5"
-          sx={{
-            color: "#B22234",
-            fontWeight: 500,
-            fontSize: { xs: "1.15rem", md: "1.35rem" },
-            lineHeight: 1.7,
-            maxWidth: 700,
-            mx: "auto",
-          }}
-        >
-          {getProductStory(product)}
-        </Typography>
-      </Box>
       {/* Related Products */}
       <Box sx={{ mt: 8 }}>
         <Typography variant="h5" fontWeight={700} gutterBottom>

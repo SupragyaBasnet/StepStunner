@@ -11,9 +11,9 @@ const navItems = [
   { label: 'Settings', path: 'settings', icon: <SettingsIcon /> },
 ];
 
-const themeColor = 'rgb(255,106,106)';
-const themeColorLight = 'rgba(255,106,106,0.13)';
-const themeColorHover = 'rgba(255,106,106,0.07)';
+const themeColor = '#d72660';
+const themeColorLight = 'rgba(215, 38, 96, 0.13)';
+const themeColorHover = 'rgba(215, 38, 96, 0.07)';
 
 export default function ProfileLayout() {
   const location = useLocation();
@@ -235,7 +235,7 @@ export default function ProfileLayout() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          background: 'linear-gradient(135deg, #f8fafc 80%, #f3f6fb 100%)',
+          background: 'linear-gradient(135deg, #fef7f9 0%, #f8f0f3 50%, #f3e9ed 100%)',
           boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
           position: 'relative',
         }}
@@ -263,7 +263,7 @@ export default function ProfileLayout() {
               backgroundColor: 'white',
               color: 'black',
               boxShadow: 2,
-              '&:hover': { backgroundColor: '#f0f0f0', color: 'rgb(255,106,106)' },
+              '&:hover': { backgroundColor: '#f0f0f0', color: '#d72660' },
               width: 36,
               height: 36,
               zIndex: 1,
@@ -351,18 +351,17 @@ export default function ProfileLayout() {
         </List>
         <Button
           variant="outlined"
-          color="error"
           fullWidth
           sx={{
             mt: 2,
             borderRadius: 3,
             fontWeight: 700,
-            borderColor: themeColor,
-            color: themeColor,
+            borderColor: '#d72660',
+            color: '#d72660',
             '&:hover': {
-              backgroundColor: themeColorLight,
-              borderColor: themeColor,
-              color: themeColor,
+              backgroundColor: 'rgba(215, 38, 96, 0.1)',
+              borderColor: '#d72660',
+              color: '#d72660',
             },
           }}
           onClick={() => {
@@ -381,14 +380,34 @@ export default function ProfileLayout() {
             <Typography>Are you sure you want to delete your account? This action cannot be undone.</Typography>
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'center', gap: 2 }}>
-            <Button color="error" variant="contained" onClick={() => {
-              handleDeleteAccount();
-              console.log('Delete confirmed, handleDeleteAccount called');
-            }} disabled={deleting}>Delete</Button>
-            <Button onClick={() => {
-              setShowDeleteConfirm(false);
-              console.log('Delete cancelled, dialog closed');
-            }}>Cancel</Button>
+            <Button 
+              variant="contained" 
+              onClick={() => {
+                handleDeleteAccount();
+                console.log('Delete confirmed, handleDeleteAccount called');
+              }} 
+              disabled={deleting}
+              sx={{
+                backgroundColor: '#d72660',
+                '&:hover': { backgroundColor: '#b71c4a' },
+              }}
+            >
+              Delete
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                console.log('Delete cancelled, dialog closed');
+              }}
+              sx={{
+                color: '#d72660',
+                '&:hover': {
+                  backgroundColor: 'rgba(215, 38, 96, 0.1)',
+                },
+              }}
+            >
+              Cancel
+            </Button>
           </DialogActions>
         </Dialog>
         {/* Upload/Capture Menu and Dialogs */}
@@ -413,8 +432,27 @@ export default function ProfileLayout() {
             <video ref={videoRef} autoPlay style={{ width: '100%', borderRadius: 8 }} />
           </DialogContent>
           <DialogActions>
-            <IconButton onClick={handleCameraClose}>Cancel</IconButton>
-            <Button onClick={handleCapturePhoto} variant="contained">Capture</Button>
+            <IconButton 
+              onClick={handleCameraClose}
+              sx={{
+                color: '#d72660',
+                '&:hover': {
+                  backgroundColor: 'rgba(215, 38, 96, 0.1)',
+                },
+              }}
+            >
+              Cancel
+            </IconButton>
+            <Button 
+              onClick={handleCapturePhoto} 
+              variant="contained"
+              sx={{
+                backgroundColor: '#d72660',
+                '&:hover': { backgroundColor: '#b71c4a' },
+              }}
+            >
+              Capture
+            </Button>
           </DialogActions>
         </Dialog>
         <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

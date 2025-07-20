@@ -32,7 +32,7 @@ const Footer: React.FC = () => {
         <Grid container spacing={4}>
           <Grid item xs={12} sm={4}>
             <Typography variant="h6" gutterBottom sx={{ color: '#111', fontWeight: 700, mb: 2 }}>
-              StepStunner 🎁
+              StepStunner
             </Typography>
             <Typography variant="body2" sx={{ color: '#111', mb: 1 }}>
               Step into style with our premium collection of women's sneakers. From casual to athletic, we offer comfort and fashion for every step.

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardContent, CardMedia, Container, Grid, Typography, Paper, Chip, CircularProgress } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import sneakersImg from '../assets/Nike Panda Dunks Shoe .jpg';
-import heelsImg from '../assets/heels/Jimmy Choo us.jpg';
+import sneakersImg from '../assets/Nike_Panda_Dunks_Shoe.png';
+import heelsImg from '../assets/heels/Jimmy_Choo_us.png';
 import flatsImg from '../assets/flats/White_Products_by_Louis_Vuitton-_LV_Sunset_Flat_Comfort_Sandal.png';
 import heroImage from '../assets/hero1.jpg';
 import { products } from '../data/products';
@@ -49,9 +49,21 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate trending products (top 6 from products)
-    setTrending(products.slice(0, 6));
-    setLoading(false);
+    const fetchTrendingProducts = async () => {
+      try {
+        const res = await fetch('/api/products/trending');
+        if (!res.ok) throw new Error('Failed to fetch trending products');
+        const data = await res.json();
+        setTrending(data);
+      } catch (error) {
+        console.error('Error fetching trending products:', error);
+        setTrending([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrendingProducts();
   }, []);
 
   return (
@@ -134,7 +146,7 @@ const Home: React.FC = () => {
         ) : (
           <Grid container spacing={4}>
             {trending.map((product) => (
-              <Grid item xs={12} sm={6} md={4} key={product.id}>
+              <Grid item xs={12} sm={6} md={4} key={product._id}>
                 <Card
                   sx={{
                     borderRadius: 4,
@@ -142,14 +154,40 @@ const Home: React.FC = () => {
                     transition: 'transform 0.2s',
                     '&:hover': { transform: 'scale(1.03)', boxShadow: '0 6px 24px 0 rgba(215,38,96,0.18)' },
                     cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}
-                  onClick={() => navigate(`/products/${product.id}`)}
+                  onClick={() => {
+                    console.log('Navigating to product:', product._id);
+                    navigate(`/products/${product._id}`);
+                  }}
                 >
                   <CardMedia
                     component="img"
                     image={product.image}
                     alt={product.name}
-                    sx={{ height: 200, objectFit: 'contain', bgcolor: 'white', borderRadius: 2 }}
+                    sx={{ 
+                      height: 200, 
+                      objectFit: 'contain', 
+                      bgcolor: 'white', 
+                      borderRadius: 2,
+                      position: 'relative',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(215, 38, 96, 0.1)',
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        borderRadius: 2,
+                      },
+                      '&:hover::after': {
+                        opacity: 1,
+                      }
+                    }}
                   />
                   <CardContent sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{product.name}</Typography>

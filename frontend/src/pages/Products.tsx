@@ -125,11 +125,41 @@ const Products: React.FC = () => {
 
   // Sidebar content
   const sidebar = (
-    <Box sx={{ width: 260, p: 2, position: { md: 'sticky' }, top: { md: 32 }, alignSelf: { md: 'flex-start' }, zIndex: 2 }}>
-      <Typography variant="h6" fontWeight={700} mb={2}>Filters</Typography>
+    <Box sx={{ 
+      width: 280, 
+      p: 3, 
+      position: { md: 'sticky' }, 
+      top: { md: 32 }, 
+      alignSelf: { md: 'flex-start' }, 
+      zIndex: 2,
+      bgcolor: 'white',
+      borderRadius: 4,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+      border: '1px solid rgba(0,0,0,0.05)'
+    }}>
+      <Typography 
+        variant="h5" 
+        fontWeight={800} 
+        mb={3}
+        sx={{
+          color: '#1a1a1a',
+          borderBottom: '2px solid #d72660',
+          pb: 1,
+          display: 'inline-block'
+        }}
+      >
+        Filters
+      </Typography>
       {/* Category Filter */}
-      <Typography variant="subtitle2" fontWeight={600} mb={1}>Category</Typography>
-      <FormGroup>
+      <Typography 
+        variant="subtitle1" 
+        fontWeight={700} 
+        mb={2}
+        sx={{ color: '#333', fontSize: '1.1rem' }}
+      >
+        Category
+      </Typography>
+      <FormGroup sx={{ mb: 3 }}>
         {allCategories.map(cat => (
           <FormControlLabel
             key={cat.value}
@@ -140,9 +170,22 @@ const Products: React.FC = () => {
                   if (e.target.checked) setSelectedCategories([...selectedCategories, cat.value]);
                   else setSelectedCategories(selectedCategories.filter(c => c !== cat.value));
                 }}
+                sx={{
+                  color: '#d72660',
+                  '&.Mui-checked': {
+                    color: '#d72660',
+                  },
+                }}
               />
             }
             label={cat.label}
+            sx={{
+              '& .MuiFormControlLabel-label': {
+                fontWeight: 600,
+                fontSize: '1rem',
+                color: '#333'
+              }
+            }}
           />
         ))}
       </FormGroup>
@@ -166,21 +209,54 @@ const Products: React.FC = () => {
         </>
       )}
       {/* Price Range Filter */}
-      <Typography variant="subtitle2" fontWeight={600} mt={3} mb={1}>Price Range</Typography>
+      <Typography 
+        variant="subtitle1" 
+        fontWeight={700} 
+        mb={2}
+        sx={{ color: '#333', fontSize: '1.1rem' }}
+      >
+        Price Range
+      </Typography>
       <Slider
         value={priceRange}
         min={minProductPrice}
         max={maxProductPrice}
         onChange={(_, val) => setPriceRange(val as [number, number])}
         valueLabelDisplay="auto"
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 2,
+          '& .MuiSlider-thumb': {
+            backgroundColor: '#d72660',
+            '&:hover': {
+              boxShadow: '0 0 0 8px rgba(215, 38, 96, 0.2)',
+            },
+          },
+          '& .MuiSlider-track': {
+            backgroundColor: '#d72660',
+          },
+          '& .MuiSlider-rail': {
+            backgroundColor: '#e0e0e0',
+          },
+        }}
       />
-      <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="body2">Rs. {priceRange[0]}</Typography>
-        <Typography variant="body2">Rs. {priceRange[1]}</Typography>
+      <Box display="flex" justifyContent="space-between" mb={3}>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: '#d72660' }}>
+          Rs. {priceRange[0]?.toLocaleString('en-IN')}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: '#d72660' }}>
+          Rs. {priceRange[1]?.toLocaleString('en-IN')}
+        </Typography>
       </Box>
+      
       {/* Rating Filter */}
-      <Typography variant="subtitle2" fontWeight={600} mt={2} mb={1}>Minimum Rating</Typography>
+      <Typography 
+        variant="subtitle1" 
+        fontWeight={700} 
+        mb={2}
+        sx={{ color: '#333', fontSize: '1.1rem' }}
+      >
+        Minimum Rating
+      </Typography>
       <Slider
         value={minRating}
         min={0}
@@ -188,8 +264,27 @@ const Products: React.FC = () => {
         step={0.5}
         onChange={(_, val) => setMinRating(val as number)}
         valueLabelDisplay="auto"
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 2,
+          '& .MuiSlider-thumb': {
+            backgroundColor: '#d72660',
+            '&:hover': {
+              boxShadow: '0 0 0 8px rgba(215, 38, 96, 0.2)',
+            },
+          },
+          '& .MuiSlider-track': {
+            backgroundColor: '#d72660',
+          },
+          '& .MuiSlider-rail': {
+            backgroundColor: '#e0e0e0',
+          },
+        }}
       />
+      <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: '#d72660' }}>
+          {minRating} ★ and above
+        </Typography>
+      </Box>
     </Box>
   );
 
@@ -203,30 +298,218 @@ const Products: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh'}}>
-        <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-          <Typography variant="h4" align="center" sx={{ mt: 8 }}>Loading products...</Typography>
+      <Box sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: 700, 
+              color: '#d72660',
+              mb: 2
+            }}
+          >
+            Loading Products...
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#666' }}>
+            Please wait while we fetch the latest collection
+          </Typography>
         </Container>
       </Box>
     );
   }
   if (error) {
     return (
-      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh'}}>
-        <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-          <Typography variant="h4" align="center" color="error" sx={{ mt: 8 }}>{error}</Typography>
+      <Box sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: 700, 
+              color: '#d72660',
+              mb: 2
+            }}
+          >
+            Oops! Something went wrong
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#666', mb: 3 }}>
+            {error}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => window.location.reload()}
+            sx={{
+              bgcolor: '#d72660',
+              fontWeight: 600,
+              px: 4,
+              py: 1.5,
+              borderRadius: 3,
+              '&:hover': {
+                bgcolor: '#b71c4a'
+              }
+            }}
+          >
+            Try Again
+          </Button>
         </Container>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh'}}>
-      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-        <Typography variant="h3" component="h1" align="center" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.2rem' }, color: '#111', mb: 0 }}>
-          Browse Products
-        </Typography>
-        <div className="heading-dash" />
+    <Box sx={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      position: 'relative'
+    }}>
+      {/* Background decorative elements */}
+      <Box sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '200px',
+        background: 'linear-gradient(135deg, rgba(215, 38, 96, 0.05) 0%, rgba(215, 38, 96, 0.02) 100%)',
+        zIndex: 0
+      }} />
+      
+      <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
+        {/* Header Section */}
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Typography 
+            variant="h2" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 900, 
+              fontSize: { xs: '2.5rem', md: '3.5rem' }, 
+              color: '#1a1a1a',
+              mb: 2,
+              background: 'linear-gradient(135deg, #d72660 0%, #b71c4a 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            Discover Your Style
+          </Typography>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              color: '#666',
+              fontWeight: 400,
+              mb: 3,
+              maxWidth: '600px',
+              mx: 'auto'
+            }}
+          >
+            Explore our curated collection of premium footwear
+          </Typography>
+          
+          {/* Search and Sort Bar */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            gap: 2, 
+            mb: 4, 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            maxWidth: '800px',
+            mx: 'auto'
+          }}>
+            {isMobile && (
+              <IconButton 
+                onClick={() => setSidebarOpen(true)} 
+                sx={{ 
+                  mb: { xs: 1, sm: 0 },
+                  bgcolor: 'white',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  '&:hover': { bgcolor: '#f8f9fa' }
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+            <InputBase
+              placeholder="Search for your perfect pair..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              sx={{ 
+                flex: 1, 
+                bgcolor: 'white', 
+                borderRadius: 3, 
+                px: 3, 
+                py: 1.5, 
+                fontSize: '1.1rem', 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease',
+                '&:focus-within': {
+                  borderColor: '#d72660',
+                  boxShadow: '0 6px 20px rgba(215, 38, 96, 0.2)'
+                }
+              }}
+            />
+            <FormControl sx={{ minWidth: 180 }}>
+              <Select
+                value={sortBy}
+                displayEmpty
+                onChange={e => setSortBy(e.target.value)}
+                size="medium"
+                sx={{
+                  minWidth: 180,
+                  height: 50,
+                  bgcolor: 'white',
+                  borderRadius: 3,
+                  fontSize: '1rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  border: '2px solid transparent',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#d72660',
+                    boxShadow: '0 6px 20px rgba(215, 38, 96, 0.15)'
+                  },
+                  '.MuiSelect-select': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pl: 3,
+                    fontWeight: 500
+                  },
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { 
+                      textAlign: 'center',
+                      borderRadius: 2,
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+                    }
+                  }
+                }}
+              >
+                <MenuItem value="" disabled>
+                  <span style={{ color: '#888', fontWeight: 600 }}>Sort By</span>
+                </MenuItem>
+                <MenuItem value="priceLowHigh">Price: Low to High</MenuItem>
+                <MenuItem value="priceHighLow">Price: High to Low</MenuItem>
+                <MenuItem value="ratingLowHigh">Rating: Low to High</MenuItem>
+                <MenuItem value="ratingHighLow">Rating: High to Low</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+        
         <Grid container spacing={4}>
           {/* Sidebar (desktop) */}
           {!isMobile && (
@@ -236,57 +519,21 @@ const Products: React.FC = () => {
           )}
           {/* Main content */}
           <Grid item xs={12} md={9}>
-            {/* Top bar: search and sort */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3, alignItems: { sm: 'center' }, justifyContent: 'center' }}>
-              {isMobile && (
-                <IconButton onClick={() => setSidebarOpen(true)} sx={{ mb: { xs: 1, sm: 0 } }}>
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <InputBase
-                placeholder="Search products..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                sx={{ flex: 1, bgcolor: 'grey.100', borderRadius: 2, px: 2, py: 1, fontSize: '1rem', boxShadow: 1 }}
-              />
-              <FormControl sx={{ minWidth: 160, mx: 'auto' }}>
-      
-                <Select
-                  value={sortBy}
-                  displayEmpty
-                  onChange={e => setSortBy(e.target.value)}
-                  size="small"
-                  sx={{
-                    minWidth: 160,
-                    height: 48,
-                    bgcolor: 'grey.100',
-                    borderRadius: 2,
-                    fontSize: '1rem',
-                    boxShadow: 1,
-                    border: '1px solid #ccc',
-                    '.MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      pl: 2,
-                    },
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { textAlign: 'center' }
-                    }
+            {/* Mobile menu button */}
+            {isMobile && (
+              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-start' }}>
+                <IconButton 
+                  onClick={() => setSidebarOpen(true)} 
+                  sx={{ 
+                    bgcolor: 'white',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    '&:hover': { bgcolor: '#f8f9fa' }
                   }}
                 >
-                  <MenuItem value="" disabled>
-                    <span style={{ color: '#888' }}>Sort By</span>
-                  </MenuItem>
-                  <MenuItem value="priceLowHigh">Price: Low to High</MenuItem>
-                  <MenuItem value="priceHighLow">Price: High to Low</MenuItem>
-                  <MenuItem value="ratingLowHigh">Rating: Low to High</MenuItem>
-                  <MenuItem value="ratingHighLow">Rating: High to Low</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
+                  <MenuIcon />
+                </IconButton>
+              </Box>
+            )}
             {/* Sidebar drawer (mobile) */}
             <Drawer anchor="left" open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
               {sidebar}
@@ -295,60 +542,205 @@ const Products: React.FC = () => {
             <Grid container spacing={4}>
               {filteredProducts.length === 0 ? (
                 <Grid item xs={12}>
-                  <Typography variant="h6" align="center" color="text.secondary" sx={{ mt: 6 }}>
-                    No products found.
-                  </Typography>
+                  <Box sx={{ 
+                    textAlign: 'center', 
+                    py: 8,
+                    px: 2
+                  }}>
+                    <Typography 
+                      variant="h4" 
+                      sx={{ 
+                        fontWeight: 700, 
+                        color: '#666',
+                        mb: 2
+                      }}
+                    >
+                      No products found
+                    </Typography>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        color: '#888',
+                        mb: 3,
+                        maxWidth: '400px',
+                        mx: 'auto'
+                      }}
+                    >
+                      Try adjusting your filters or search terms to find what you're looking for.
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setSearch('');
+                        setSelectedCategories([]);
+                        setSelectedBrand('');
+                        setPriceRange([minProductPrice, maxProductPrice]);
+                        setMinRating(0);
+                        setSortBy('');
+                      }}
+                      sx={{
+                        borderColor: '#d72660',
+                        color: '#d72660',
+                        fontWeight: 600,
+                        px: 4,
+                        py: 1.5,
+                        borderRadius: 3,
+                        '&:hover': {
+                          borderColor: '#b71c4a',
+                          backgroundColor: 'rgba(215, 38, 96, 0.1)'
+                        }
+                      }}
+                    >
+                      Clear All Filters
+                    </Button>
+                  </Box>
                 </Grid>
               ) : (
                 filteredProducts.map((product) => {
                   const mainIdx = 0;
                   return (
-                    <Grid item key={product.id} xs={12} sm={6} md={4} lg={4}>
+                    <Grid item key={product._id} xs={12} sm={6} md={4} lg={4}>
                       <Card
                         sx={{
-                          width: 260,
-                          height: 420,
+                          height: 450,
                           display: 'flex',
                           flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
                           bgcolor: 'white',
-                          borderRadius: 4,
-                          boxShadow: '0 2px 12px 0 rgba(0,0,0,0.04)',
-                          p: { xs: 1, sm: 2 },
-                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          borderRadius: 3,
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                          p: 0,
+                          transition: 'all 0.3s ease',
                           '&:hover': {
-                            transform: 'translateY(-5px)',
-                            boxShadow: '0 6px 24px 0 rgba(244,106,106,0.10)',
+                            transform: 'translateY(-8px)',
+                            boxShadow: '0 12px 40px rgba(215, 38, 96, 0.15)',
                           },
-                          mx: 'auto',
                           overflow: 'hidden',
                           cursor: 'pointer',
+                          position: 'relative',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '4px',
+                            background: 'linear-gradient(135deg, #d72660 0%, #b71c4a 100%)',
+                            zIndex: 1
+                          }
                         }}
                         onClick={() => navigate(`/products/${product._id}`)}
                       >
-                        <CardMedia
-                          component="img"
-                          image={product.image}
-                          alt={product.name}
-                          sx={{ width: 180, height: 180, objectFit: 'contain', mx: 'auto', bgcolor: 'white', borderRadius: 2, mt: 2, mb: 1 }}
-                        />
-                        <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 0, width: '100%', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                          <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#111', fontSize: '1.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {product.name}
-                          </Typography>
-                          <Typography variant="body2" paragraph sx={{ mb: 0.5, color: '#111', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: 36 }}>
-                            {product.description}
-                          </Typography>
-                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mb: 0.5 }}>
-                            <Rating value={product.rating} precision={0.5} readOnly size="small" />
-                            <Typography variant="body2" color="text.secondary">
-                              ({product.reviews})
+                        <Box sx={{ 
+                          position: 'relative',
+                          p: 2,
+                          bgcolor: '#fafafa',
+                          minHeight: 200,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <CardMedia
+                            component="img"
+                            image={product.image}
+                            alt={product.name}
+                            sx={{ 
+                              width: '100%',
+                              height: 180, 
+                              objectFit: 'contain',
+                              borderRadius: 2,
+                              transition: 'transform 0.3s ease',
+                              '&:hover': {
+                                transform: 'scale(1.05)'
+                              }
+                            }}
+                          />
+                          {/* Rating badge */}
+                          <Box sx={{
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                            borderRadius: 2,
+                            px: 1.5,
+                            py: 0.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5
+                          }}>
+                            <Typography variant="body2" sx={{ color: '#ffd700', fontWeight: 700 }}>★</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                              {product.rating || 0}
                             </Typography>
-                          </Stack>
-                          <Typography variant="h6" sx={{ fontWeight: 700, color: '#111', mb: 0.5 }}>
-                            Rs. {typeof product.price === 'number' ? product.price.toLocaleString('en-IN') : 'N/A'}
-                          </Typography>
+                          </Box>
+                        </Box>
+                        
+                        <CardContent sx={{ 
+                          flexGrow: 1, 
+                          textAlign: 'left', 
+                          p: 3,
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          justifyContent: 'space-between'
+                        }}>
+                          <Box>
+                            <Typography 
+                              variant="h6" 
+                              sx={{ 
+                                fontWeight: 800, 
+                                color: '#1a1a1a', 
+                                fontSize: '1.1rem',
+                                mb: 1,
+                                lineHeight: 1.3,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
+                              {product.name}
+                            </Typography>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: '#666',
+                                mb: 2,
+                                display: '-webkit-box', 
+                                WebkitLineClamp: 2, 
+                                WebkitBoxOrient: 'vertical', 
+                                overflow: 'hidden', 
+                                textOverflow: 'ellipsis',
+                                lineHeight: 1.4
+                              }}
+                            >
+                              {product.description}
+                            </Typography>
+                          </Box>
+                          
+                          <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                              <Rating 
+                                value={product.rating || 0} 
+                                precision={0.5} 
+                                readOnly 
+                                size="small"
+                                sx={{ color: '#ffd700' }}
+                              />
+                              <Typography variant="body2" sx={{ color: '#888', fontWeight: 500 }}>
+                                ({product.reviews || 0})
+                              </Typography>
+                            </Stack>
+                            <Typography 
+                              variant="h5" 
+                              sx={{ 
+                                fontWeight: 800, 
+                                color: '#d72660',
+                                fontSize: '1.3rem'
+                              }}
+                            >
+                              Rs. {typeof product.price === 'number' ? product.price.toLocaleString('en-IN') : 'N/A'}
+                            </Typography>
+                          </Box>
                         </CardContent>
                       </Card>
                     </Grid>

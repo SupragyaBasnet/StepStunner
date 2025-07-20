@@ -14,6 +14,21 @@ const userSchema = new mongoose.Schema({
     type: Date,
   },
   profileImage: { type: String },
+  
+  // Security fields
+  passwordHistory: [{ 
+    password: String, 
+    changedAt: { type: Date, default: Date.now } 
+  }],
+  passwordChangedAt: { type: Date, default: Date.now },
+  passwordExpiresAt: { type: Date },
+  failedLoginAttempts: { type: Number, default: 0 },
+  accountLockedUntil: { type: Date },
+  lastLoginAt: { type: Date },
+  lastLoginIp: { type: String },
+  isActive: { type: Boolean, default: true },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  
   cart: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: false },
@@ -36,6 +51,75 @@ userSchema.pre('save', async function (next) {
 
 userSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Check if account is locked
+userSchema.methods.isAccountLocked = function() {
+  if (!this.accountLockedUntil) return false;
+  return new Date() < this.accountLockedUntil;
+};
+
+// Increment failed login attempts
+userSchema.methods.incrementFailedAttempts = function() {
+  this.failedLoginAttempts += 1;
+  
+  // Lock account after 5 failed attempts for 15 minutes
+  if (this.failedLoginAttempts >= 5) {
+    this.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  }
+  
+  return this.save();
+};
+
+// Reset failed login attempts
+userSchema.methods.resetFailedAttempts = function() {
+  this.failedLoginAttempts = 0;
+  this.accountLockedUntil = null;
+  this.lastLoginAt = new Date();
+  return this.save();
+};
+
+// Check if password has expired
+userSchema.methods.isPasswordExpired = function() {
+  if (!this.passwordExpiresAt) return false;
+  return new Date() > this.passwordExpiresAt;
+};
+
+// Check if password has been used recently
+userSchema.methods.isPasswordReused = function(newPassword) {
+  if (!this.passwordHistory || this.passwordHistory.length === 0) {
+    return false;
+  }
+  
+  // Check last 5 passwords
+  const recentPasswords = this.passwordHistory.slice(-5);
+  for (const historyItem of recentPasswords) {
+    if (bcrypt.compareSync(newPassword, historyItem.password)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// Update password with history
+userSchema.methods.updatePassword = async function(newPassword) {
+  // Add current password to history
+  this.passwordHistory.push({
+    password: this.password,
+    changedAt: new Date()
+  });
+  
+  // Keep only last 10 passwords
+  if (this.passwordHistory.length > 10) {
+    this.passwordHistory = this.passwordHistory.slice(-10);
+  }
+  
+  // Update password
+  this.password = newPassword;
+  this.passwordChangedAt = new Date();
+  this.passwordExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
+  
+  return this.save();
 };
 
 // Use existing model if already compiled

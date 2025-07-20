@@ -35,14 +35,14 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import React, { useState } from "react";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import nikeLogo from "../assets/Nike Panda Dunks Shoe .jpg";
 import adidasLogo from "../assets/Pink adidas sambas.jpg";
 import converseLogo from "../assets/Converse Chuck Taylor All Star Madison Mid Lilac .jpg";
 import vansLogo from "../assets/Vans Caldrone Sneaker .jpg";
-import jimmyChooLogo from "../assets/heels/Jimmy Choo us.jpg";
-import steveMaddenLogo from "../assets/heels/Steve Madden Eryka Ankle Strap Sandal in Multi Leather at Nordstrom Rack.jpg";
+import jimmyChooLogo from "../assets/heels/Jimmy_Choo_us.png";
+import steveMaddenLogo from "../assets/heels/Steve_Madden_Eryka_Ankle_Strap_Sandal_in_Multi_Leather_at_Nordstrom_Rack.png";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
@@ -56,6 +56,7 @@ const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -419,7 +420,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=sneakers&brand=nike';
+                            navigate('/products?category=sneakers&brand=nike');
                           }}
                         >
                           Nike
@@ -440,7 +441,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=sneakers&brand=adidas';
+                            navigate('/products?category=sneakers&brand=adidas');
                           }}
                         >
                           Adidas
@@ -461,7 +462,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=sneakers&brand=converse';
+                            navigate('/products?category=sneakers&brand=converse');
                           }}
                         >
                           Converse
@@ -482,7 +483,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=sneakers&brand=vans';
+                            navigate('/products?category=sneakers&brand=vans');
                           }}
                         >
                           Vans
@@ -503,7 +504,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=sneakers&brand=calvin-klein';
+                            navigate('/products?category=sneakers&brand=calvin-klein');
                           }}
                         >
                           Calvin Klein
@@ -524,7 +525,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=sneakers&brand=louis-vuitton';
+                            navigate('/products?category=sneakers&brand=louis-vuitton');
                           }}
                         >
                           Louis Vuitton
@@ -554,7 +555,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=heels&brand=jimmy-choo';
+                            navigate('/products?category=heels&brand=jimmy-choo');
                           }}
                         >
                           Jimmy Choo
@@ -575,7 +576,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=heels&brand=steve-madden';
+                            navigate('/products?category=heels&brand=steve-madden');
                           }}
                         >
                           Steve Madden
@@ -596,7 +597,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=heels&brand=sloyan';
+                            navigate('/products?category=heels&brand=sloyan');
                           }}
                         >
                           Sloyan
@@ -617,7 +618,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=heels&brand=jypsey';
+                            navigate('/products?category=heels&brand=jypsey');
                           }}
                         >
                           JYPSEY
@@ -647,7 +648,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=flats&brand=charles-keith';
+                            navigate('/products?category=flats&brand=charles-keith');
                           }}
                         >
                           Charles & Keith
@@ -668,7 +669,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=flats&brand=louis-vuitton';
+                            navigate('/products?category=flats&brand=louis-vuitton');
                           }}
                         >
                           Louis Vuitton
@@ -689,7 +690,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=flats&brand=odyssey';
+                            navigate('/products?category=flats&brand=odyssey');
                           }}
                         >
                           ODYSSEY
@@ -710,7 +711,7 @@ const Navbar: React.FC = () => {
                           }}
                           onClick={() => {
                             handleProductsMenuClose();
-                            window.location.href = '/products?category=flats&brand=babudog';
+                            navigate('/products?category=flats&brand=babudog');
                           }}
                         >
                           BABUDOG
