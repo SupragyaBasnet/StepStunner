@@ -25,6 +25,7 @@ import Products from './pages/Products';
 import ProfileAddresses from './pages/ProfileAddresses';
 import ProfileImage from './pages/ProfileImage';
 import ProfileLayout from './pages/ProfileLayout';
+import ProfileMFASetup from './pages/ProfileMFASetup';
 import ProfileOrders from './pages/ProfileOrders';
 import ProfileOverview from './pages/ProfileOverview';
 import ProfileSettings from './pages/ProfileSettings';
@@ -98,6 +99,7 @@ const App: React.FC = () => {
                     <Route path="info" element={<ProfileOverview />} />
                     <Route path="orders" element={<ProfileOrders />} />
                     <Route path="addresses" element={<ProfileAddresses />} />
+                    <Route path="mfa" element={<ProfileMFASetup />} />
                     <Route path="settings" element={<ProfileSettings />} />
                   </Route>
                  

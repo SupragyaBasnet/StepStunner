@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Box, Avatar, Typography, List, ListItem, ListItemIcon, ListItemText, Paper, IconButton, Menu, MenuItem, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
-import { Home, LocalShipping, LocationOn, Settings as SettingsIcon, PhotoCamera, PhotoLibrary } from '@mui/icons-material';
+import { Home, LocalShipping, LocationOn, Settings as SettingsIcon, PhotoCamera, PhotoLibrary, Security } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import React, { useRef, useState } from 'react';
 
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Profile', path: 'info', icon: <Home /> },
   { label: 'Orders', path: 'orders', icon: <LocalShipping /> },
   { label: 'Addresses', path: 'addresses', icon: <LocationOn /> },
+  { label: 'Security', path: 'mfa', icon: <Security /> },
   { label: 'Settings', path: 'settings', icon: <SettingsIcon /> },
 ];
 

@@ -10,18 +10,24 @@ import {
   Paper,
   InputAdornment,
   IconButton,
-  Snackbar
+  Snackbar,
+  Stepper,
+  Step,
+  StepLabel
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, Security } from '@mui/icons-material';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mfaToken, setMfaToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requiresMFA, setRequiresMFA] = useState(false);
+  const [mfaMethod, setMfaMethod] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -45,7 +51,30 @@ const Login: React.FC = () => {
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
+      
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          mfaToken: requiresMFA ? mfaToken : undefined
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (data.requiresMFA) {
+          setRequiresMFA(true);
+          setMfaMethod(data.mfaMethod);
+          setError('');
+          setLoading(false);
+          return;
+        }
+        throw new Error(data.message || data.error || "Login failed");
+      }
+      
       // Set success message and then navigate
       setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
       // Use a small delay before navigating to allow snackbar to be seen
@@ -59,6 +88,71 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleMFAVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaToken.trim()) {
+      setError('Please enter your MFA token');
+      return;
+    }
+    
+    try {
+      setError('');
+      setLoading(true);
+      
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          mfaToken
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "MFA verification failed");
+      }
+      
+      // Set success message and then navigate
+      setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
+      setTimeout(() => {
+        navigate('/');
+      }, 500);
+    } catch (err) {
+      setError('Invalid MFA token. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMFAMethodLabel = (method: string) => {
+    switch (method) {
+      case 'totp':
+        return 'Authenticator App (TOTP)';
+      case 'sms':
+        return 'SMS Code';
+      case 'email':
+        return 'Email Code';
+      default:
+        return 'Verification Code';
+    }
+  };
+
+  const getMFAPlaceholder = (method: string) => {
+    switch (method) {
+      case 'totp':
+        return 'Enter 6-digit code from your authenticator app';
+      case 'sms':
+        return 'Enter 6-digit code sent to your phone';
+      case 'email':
+        return 'Enter 6-digit code sent to your email';
+      default:
+        return 'Enter verification code';
+    }
+  };
+
   return (
     <Container maxWidth="sm">
       <Box
@@ -69,89 +163,155 @@ const Login: React.FC = () => {
           justifyContent: 'center',
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            width: '100%',
-            maxWidth: 400,
-          }}
-        >
+        <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">
-            Login
+            {requiresMFA ? 'Two-Factor Authentication' : 'Sign In'}
           </Typography>
+          
+          {requiresMFA && (
+            <Box sx={{ mb: 3 }}>
+              <Stepper activeStep={1} sx={{ mb: 3 }}>
+                <Step>
+                  <StepLabel>Login</StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel>MFA Verification</StepLabel>
+                </Step>
+              </Stepper>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Security sx={{ mr: 1 }} />
+                Please enter your {getMFAMethodLabel(mfaMethod)} to complete login.
+              </Alert>
+            </Box>
+          )}
+          
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      {showPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              Sign In
-            </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Link component={RouterLink} to="/forgot-password" variant="body2">
-                Forgot password?
-              </Link>
-            </Box>
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
-                <Link component={RouterLink} to="/register">
-                  Sign up
+          
+          {!requiresMFA ? (
+            // Step 1: Email and Password
+            <Box component="form" onSubmit={handleSubmit}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email Address"
+                name="email"
+                autoComplete="email"
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword(!showPassword)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        edge="end"
+                      >
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+                disabled={loading}
+              >
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Button>
+              <Box sx={{ textAlign: 'center' }}>
+                <Link component={RouterLink} to="/forgot-password" variant="body2">
+                  Forgot password?
                 </Link>
-              </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Typography variant="body2">
+                  Don't have an account?{' '}
+                  <Link component={RouterLink} to="/register">
+                    Sign up
+                  </Link>
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          ) : (
+            // Step 2: MFA Token
+            <Box component="form" onSubmit={handleMFAVerification}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="mfaToken"
+                label={getMFAMethodLabel(mfaMethod)}
+                name="mfaToken"
+                autoComplete="off"
+                autoFocus
+                value={mfaToken}
+                onChange={(e) => setMfaToken(e.target.value)}
+                placeholder={getMFAPlaceholder(mfaMethod)}
+                inputProps={{
+                  maxLength: 6,
+                  pattern: '[0-9]*'
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+                disabled={loading}
+              >
+                {loading ? 'Verifying...' : 'Verify & Sign In'}
+              </Button>
+              <Button
+                fullWidth
+                variant="outlined"
+                sx={{ mb: 2 }}
+                onClick={() => {
+                  setRequiresMFA(false);
+                  setMfaToken('');
+                  setError('');
+                }}
+              >
+                Back to Login
+              </Button>
+            </Box>
+          )}
         </Paper>
       </Box>
-      {/* Add Snackbar component */}
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({...snackbar, open: false})}>
-        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
+      
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({...snackbar, open: false})}
+      >
+        <Alert 
+          onClose={() => setSnackbar({...snackbar, open: false})} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Container>
   );
