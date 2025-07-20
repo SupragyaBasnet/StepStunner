@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");
+const { authLimiter, validatePasswordStrength } = require("../middleware/security");
 const {
   changePassword,
   updateProfileImage,
@@ -21,14 +22,14 @@ const {
 const customizationController = require("../controllers/customizationController");
 require("dotenv").config();
 
-router.post("/register", authController.register);
-router.post("/login", authController.login);
+router.post("/register", authLimiter, validatePasswordStrength, authController.register);
+router.post("/login", authLimiter, authController.login);
 router.get("/profile", auth, authController.profile);
-router.post("/forgot-password", authController.forgotPassword);
-router.post("/verify-otp", authController.verifyOtp);
-router.post("/reset-password", authController.resetPassword);
+router.post("/forgot-password", authLimiter, authController.forgotPassword);
+router.post("/verify-otp", authLimiter, authController.verifyOtp);
+router.post("/reset-password", authLimiter, validatePasswordStrength, authController.resetPassword);
 router.put("/profile", auth, authController.updateProfile);
-router.put("/change-password", auth, changePassword);
+router.put("/change-password", auth, validatePasswordStrength, changePassword);
 router.put("/profile-image", auth, updateProfileImage);
 router.delete("/profile-image", auth, removeProfileImage);
 router.get("/cart", auth, getCart);
@@ -120,5 +121,10 @@ router.delete(
   auth,
   customizationController.deleteCustomization
 );
+
+// MFA routes
+router.post("/mfa/setup", auth, authController.setupMFA);
+router.post("/mfa/verify", auth, authController.verifyMFA);
+router.post("/mfa/disable", auth, authController.disableMFA);
 
 module.exports = router;

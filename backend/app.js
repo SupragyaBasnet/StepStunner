@@ -2,12 +2,38 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const path = require('path');
+const session = require('express-session');
+
+// Import security middleware
+const {
+  securityHeaders,
+  generalLimiter,
+  authLimiter,
+  sanitizeInput,
+  activityLogger,
+  sessionConfig
+} = require('./middleware/security');
 
 const cors = require('cors');
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true
 }));
+
+// Apply security headers
+app.use(securityHeaders);
+
+// Apply session management
+app.use(session(sessionConfig));
+
+// Apply general rate limiting
+app.use(generalLimiter);
+
+// Apply activity logging
+app.use(activityLogger);
+
+// Apply input sanitization
+app.use(sanitizeInput);
 
 app.use(express.json({ limit: '5mb' }));
 
@@ -29,6 +55,9 @@ app.use('/api/auth', authRoutes);
 
 const productRoutes = require('./routes/product');
 app.use('/api/products', productRoutes);
+
+const securityRoutes = require('./routes/security');
+app.use('/api/security', securityRoutes);
 
 
 

@@ -3,15 +3,34 @@ const ActivityLog = require("../models/ActivityLog");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const speakeasy = require("speakeasy"); // For TOTP generation
 // Optional: for auto-login after register
 
 exports.register = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    // Log registration attempt
+    await ActivityLog.logActivity({
+      action: 'register',
+      details: { email, attempt: 'started' },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      await ActivityLog.logActivity({
+        action: 'register',
+        details: { email, reason: 'invalid_email' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
       return res
         .status(400)
         .json({ message: "Please enter a valid email address." });
@@ -20,35 +39,114 @@ exports.register = async (req, res) => {
     // Phone validation (+977 followed by 10 digits)
     const phoneRegex = /^\+977\d{10}$/;
     if (!phoneRegex.test(phone)) {
+      await ActivityLog.logActivity({
+        action: 'register',
+        details: { email, reason: 'invalid_phone' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
       return res.status(400).json({
         message:
           "Phone number must start with +977 and be followed by exactly 10 digits.",
       });
     }
 
-    // Password strength validation
+    // Enhanced password strength validation
+    if (password.length < 8 || password.length > 128) {
+      await ActivityLog.logActivity({
+        action: 'register',
+        details: { email, reason: 'password_length_invalid' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({
+        message: "Password must be between 8 and 128 characters long."
+      });
+    }
+
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
     if (!passwordRegex.test(password)) {
+      await ActivityLog.logActivity({
+        action: 'register',
+        details: { email, reason: 'password_complexity_invalid' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
       return res.status(400).json({
         message:
           "Password must be at least 8 characters, include uppercase, lowercase, number, and special character.",
       });
     }
 
+    // Check for common passwords
+    const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+    if (commonPasswords.includes(password.toLowerCase())) {
+      await ActivityLog.logActivity({
+        action: 'register',
+        details: { email, reason: 'common_password' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({
+        message: "Password is too common. Please choose a more secure password."
+      });
+    }
+
     const userExists = await User.findOne({ email });
     if (userExists) {
+      await ActivityLog.logActivity({
+        action: 'register',
+        details: { email, reason: 'email_already_exists' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const user = new User({ name, email, phone, password });
+    // Set password expiry (90 days from now)
+    const passwordExpiresAt = new Date();
+    passwordExpiresAt.setDate(passwordExpiresAt.getDate() + 90);
+
+    const user = new User({ 
+      name, 
+      email, 
+      phone, 
+      password,
+      passwordExpiresAt,
+      passwordChangedAt: new Date()
+    });
     await user.save();
 
-    // Generate token
+    // Log successful registration
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'register',
+      details: { email, registrationMethod: 'email' },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
+    // Generate token with security claims
     const token = jwt.sign(
-      { id: user._id },
+      { 
+        id: user._id,
+        role: user.role,
+        passwordChangedAt: user.passwordChangedAt.getTime(),
+        iat: Math.floor(Date.now() / 1000)
+      },
       process.env.JWT_SECRET || "your_jwt_secret_here",
-      { expiresIn: "7d" }
+      { 
+        expiresIn: "7d",
+        issuer: 'stepstunner',
+        audience: 'stepstunner-users'
+      }
     );
 
     res.status(201).json({
@@ -56,9 +154,9 @@ exports.register = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-
         email: user.email,
         phone: user.phone,
+        role: user.role,
         profileImage: user.profileImage,
       },
     });
@@ -70,17 +168,153 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, mfaToken } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    // Log login attempt
+    await ActivityLog.logActivity({
+      action: 'login',
+      details: { email, attempt: 'started' },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch)
+    if (!user) {
+      await ActivityLog.logActivity({
+        action: 'login',
+        details: { email, reason: 'user_not_found' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if account is locked
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      await ActivityLog.logActivity({
+        action: 'login',
+        details: { email, reason: 'account_locked' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(423).json({ 
+        message: "Account is temporarily locked. Please try again later.",
+        lockedUntil: user.accountLockedUntil
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      // Increment failed attempts
+      await user.incrementFailedAttempts();
+      
+      await ActivityLog.logActivity({
+        action: 'login',
+        details: { email, reason: 'invalid_password', failedAttempts: user.failedLoginAttempts },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if password has expired
+    if (user.isPasswordExpired()) {
+      await ActivityLog.logActivity({
+        action: 'security_event',
+        details: { email, reason: 'password_expired' },
+        ipAddress,
+        userAgent,
+        status: 'warning'
+      });
+      return res.status(401).json({ 
+        message: "Password has expired. Please reset your password.",
+        requiresPasswordReset: true
+      });
+    }
+
+    // Check MFA if enabled
+    if (user.mfaEnabled && user.mfaVerified) {
+      if (!mfaToken) {
+        await ActivityLog.logActivity({
+          action: 'login',
+          details: { email, reason: 'mfa_token_required' },
+          ipAddress,
+          userAgent,
+          status: 'failure'
+        });
+        return res.status(401).json({ 
+          message: "MFA token required",
+          requiresMFA: true,
+          mfaMethod: user.mfaMethod
+        });
+      }
+
+      // Verify MFA token
+      let mfaValid = false;
+      if (user.mfaMethod === 'totp') {
+        mfaValid = speakeasy.totp.verify({
+          secret: user.mfaSecret,
+          encoding: 'base32',
+          token: mfaToken,
+          window: 2 // Allow 2 time steps for clock skew
+        });
+      } else if (user.mfaMethod === 'sms' || user.mfaMethod === 'email') {
+        // For SMS/Email, check against stored OTP
+        mfaValid = user.otp === mfaToken && user.otpExpiry > new Date();
+      }
+
+      if (!mfaValid) {
+        await ActivityLog.logActivity({
+          action: 'login',
+          details: { email, reason: 'invalid_mfa_token' },
+          ipAddress,
+          userAgent,
+          status: 'failure'
+        });
+        return res.status(401).json({ message: "Invalid MFA token" });
+      }
+    }
+
+    // Reset failed attempts on successful login
+    await user.resetFailedAttempts();
+    user.lastLoginAt = new Date();
+    user.lastLoginIp = ipAddress;
+    await user.save();
+
+    // Generate JWT with additional security claims
     const token = jwt.sign(
-      { id: user._id, isAdmin: user.isAdmin },
+      { 
+        id: user._id, 
+        role: user.role,
+        passwordChangedAt: user.passwordChangedAt.getTime(),
+        mfaEnabled: user.mfaEnabled,
+        iat: Math.floor(Date.now() / 1000)
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { 
+        expiresIn: "7d",
+        issuer: 'stepstunner',
+        audience: 'stepstunner-users'
+      }
     );
+
+    // Log successful login
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'login',
+      details: { mfaUsed: user.mfaEnabled },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
     res.json({
       token,
       user: {
@@ -88,11 +322,14 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        isAdmin: user.isAdmin,
+        role: user.role,
         profileImage: user.profileImage,
+        mfaEnabled: user.mfaEnabled,
+        mfaMethod: user.mfaMethod
       },
     });
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -228,22 +465,133 @@ exports.changePassword = async (req, res) => {
   try {
     const userId = req.user.id;
     const { currentPassword, newPassword } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Log password change attempt
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'password_change',
+      details: { attempt: 'started' },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
     const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch)
+    if (!isMatch) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'password_change',
+        details: { reason: 'current_password_incorrect' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
       return res.status(400).json({ message: "Current password is incorrect" });
-    user.password = newPassword;
-    await user.save();
-    // Generate new token after password change
-    const jwt = require("jsonwebtoken");
+    }
+
+    // Enhanced password validation
+    if (newPassword.length < 8 || newPassword.length > 128) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'password_change',
+        details: { reason: 'new_password_length_invalid' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({
+        message: "New password must be between 8 and 128 characters long."
+      });
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'password_change',
+        details: { reason: 'new_password_complexity_invalid' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({
+        message: "New password must include uppercase, lowercase, number, and special character."
+      });
+    }
+
+    // Check for password reuse
+    if (user.isPasswordReused(newPassword)) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'password_change',
+        details: { reason: 'password_reused' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({
+        message: "New password cannot be the same as your last 5 passwords."
+      });
+    }
+
+    // Check for common passwords
+    const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+    if (commonPasswords.includes(newPassword.toLowerCase())) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'password_change',
+        details: { reason: 'common_password' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({
+        message: "New password is too common. Please choose a more secure password."
+      });
+    }
+
+    // Update password with history
+    await user.updatePassword(newPassword);
+
+    // Log successful password change
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'password_change',
+      details: { changeMethod: 'current_password' },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
+    // Generate new token with updated password timestamp
     const token = jwt.sign(
-      { id: user._id, isAdmin: user.isAdmin },
+      { 
+        id: user._id, 
+        role: user.role,
+        passwordChangedAt: user.passwordChangedAt.getTime(),
+        iat: Math.floor(Date.now() / 1000)
+      },
       process.env.JWT_SECRET || "your_jwt_secret_here",
-      { expiresIn: "7d" }
+      { 
+        expiresIn: "7d",
+        issuer: 'stepstunner',
+        audience: 'stepstunner-users'
+      }
     );
-    res.json({ message: "Password changed successfully", token });
+
+    res.json({ 
+      message: "Password changed successfully", 
+      token,
+      passwordExpiresAt: user.passwordExpiresAt
+    });
   } catch (err) {
+    console.error('Change password error:', err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -463,5 +811,193 @@ exports.deleteAccount = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Server error while deleting account" });
+  }
+};
+
+// Setup MFA
+exports.setupMFA = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { mfaMethod } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (mfaMethod === 'totp') {
+      // Generate TOTP secret
+      const secret = speakeasy.generateSecret({
+        name: `StepStunner (${user.email})`,
+        issuer: 'StepStunner'
+      });
+
+      user.mfaSecret = secret.base32;
+      user.mfaMethod = 'totp';
+      
+      // Generate backup codes
+      const backupCodes = [];
+      for (let i = 0; i < 10; i++) {
+        backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
+      }
+      user.mfaBackupCodes = backupCodes;
+
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'mfa_setup',
+        details: { method: 'totp' },
+        ipAddress,
+        userAgent,
+        status: 'success'
+      });
+
+      res.json({
+        secret: secret.base32,
+        qrCode: secret.otpauth_url,
+        backupCodes: backupCodes
+      });
+    } else if (mfaMethod === 'sms' || mfaMethod === 'email') {
+      // Generate OTP for SMS/Email verification
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      
+      user.otp = otp;
+      user.otpExpiry = otpExpiry;
+      user.mfaMethod = mfaMethod;
+
+      // Send OTP
+      if (mfaMethod === 'email') {
+        await sendOtpEmail(user.email, otp);
+      } else if (mfaMethod === 'sms') {
+        // Implement SMS sending here
+        console.log(`SMS OTP for ${user.phone}: ${otp}`);
+      }
+
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'mfa_setup',
+        details: { method: mfaMethod },
+        ipAddress,
+        userAgent,
+        status: 'success'
+      });
+
+      res.json({ message: `MFA setup initiated. Check your ${mfaMethod} for verification code.` });
+    } else {
+      return res.status(400).json({ message: "Invalid MFA method" });
+    }
+
+    await user.save();
+  } catch (err) {
+    console.error("MFA setup error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Verify and enable MFA
+exports.verifyMFA = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { token } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    let isValid = false;
+
+    if (user.mfaMethod === 'totp') {
+      isValid = speakeasy.totp.verify({
+        secret: user.mfaSecret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+    } else if (user.mfaMethod === 'sms' || user.mfaMethod === 'email') {
+      isValid = user.otp === token && user.otpExpiry > new Date();
+    }
+
+    if (!isValid) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'mfa_verification',
+        details: { reason: 'invalid_token' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({ message: "Invalid verification token" });
+    }
+
+    // Enable MFA
+    user.mfaEnabled = true;
+    user.mfaVerified = true;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'mfa_enabled',
+      details: { method: user.mfaMethod },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
+    res.json({ message: "MFA enabled successfully" });
+  } catch (err) {
+    console.error("MFA verification error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Disable MFA
+exports.disableMFA = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { password } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Verify password before disabling MFA
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'mfa_disable',
+        details: { reason: 'invalid_password' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    // Disable MFA
+    user.mfaEnabled = false;
+    user.mfaVerified = false;
+    user.mfaSecret = undefined;
+    user.mfaBackupCodes = [];
+    user.mfaMethod = 'totp';
+    await user.save();
+
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'mfa_disabled',
+      details: {},
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
+    res.json({ message: "MFA disabled successfully" });
+  } catch (err) {
+    console.error("MFA disable error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };

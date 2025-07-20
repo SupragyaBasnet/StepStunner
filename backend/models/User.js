@@ -29,6 +29,13 @@ const userSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   
+  // MFA fields
+  mfaEnabled: { type: Boolean, default: false },
+  mfaSecret: { type: String }, // For TOTP
+  mfaBackupCodes: [{ type: String }], // Backup codes for account recovery
+  mfaMethod: { type: String, enum: ['totp', 'sms', 'email'], default: 'totp' },
+  mfaVerified: { type: Boolean, default: false },
+  
   cart: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: false },
