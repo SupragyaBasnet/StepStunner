@@ -36,7 +36,7 @@ const Login: React.FC = () => {
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success'|'error'}>({open: false, message: '', severity: 'success'});
   const [recaptchaToken, setRecaptchaToken] = useState('');
 
-  const RECAPTCHA_SITE_KEY = '6LcMSoorAAAAAIU3ZI8wh1TtxnXNmnwScxPLrplu';
+  const RECAPTCHA_SITE_KEY = 'YOUR_NEW_V2_SITE_KEY'; // Replace with your new v2 site key from Google Admin Console
 
   // Show account deleted message if redirected here
   React.useEffect(() => {

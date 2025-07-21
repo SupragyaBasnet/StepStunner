@@ -22,7 +22,7 @@ const ForgotPassword: React.FC = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const navigate = useNavigate();
 
-  const RECAPTCHA_SITE_KEY = '6LcMSoorAAAAAIU3ZI8wh1TtxnXNmnwScxPLrplu';
+  const RECAPTCHA_SITE_KEY = 'YOUR_NEW_V2_SITE_KEY'; // Replace with your new v2 site key from Google Admin Console
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
