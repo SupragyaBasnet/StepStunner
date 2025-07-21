@@ -12,24 +12,32 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState('');
   const navigate = useNavigate();
+
+  const RECAPTCHA_SITE_KEY = '6LcMSoorAAAAAIU3ZI8wh1TtxnXNmnwScxPLrplu';
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    if (!recaptchaToken) {
+      setError('Please complete the CAPTCHA');
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to send OTP');
@@ -81,6 +89,11 @@ const ForgotPassword: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
+              />
+              <ReCAPTCHA
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={token => setRecaptchaToken(token || '')}
+                style={{ margin: '16px 0' }}
               />
               <Button
                 type="submit"

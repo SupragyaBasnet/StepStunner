@@ -33,6 +33,12 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import SetNewPassword from './pages/SetNewPassword';
 import VerifyOtp from './pages/VerifyOtp';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminLayout from './pages/AdminLayout';
+import AdminUsers from './pages/AdminUsers';
+import AdminProducts from './pages/AdminProducts';
+import AdminOrders from './pages/AdminOrders';
+import AdminLogs from './pages/AdminLogs';
 
 const theme = createTheme({
   palette: {
@@ -55,6 +61,13 @@ interface PrivateRouteProps {
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (user?.role !== 'admin') return <Navigate to="/" />;
+  return <>{children}</>;
 };
 
 const App: React.FC = () => {
@@ -102,6 +115,22 @@ const App: React.FC = () => {
                     <Route path="mfa" element={<ProfileMFASetup />} />
                     <Route path="settings" element={<ProfileSettings />} />
                   </Route>
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout>
+                          <Routes>
+                            <Route path="" element={<AdminDashboard />} />
+                            <Route path="users" element={<AdminUsers />} />
+                            <Route path="products" element={<AdminProducts />} />
+                            <Route path="orders" element={<AdminOrders />} />
+                            <Route path="logs" element={<AdminLogs />} />
+                          </Routes>
+                        </AdminLayout>
+                      </AdminRoute>
+                    }
+                  />
                  
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />

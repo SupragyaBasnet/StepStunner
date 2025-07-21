@@ -18,6 +18,7 @@ import {
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Visibility, VisibilityOff, Security } from '@mui/icons-material';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -33,6 +34,9 @@ const Login: React.FC = () => {
 
   // Add state for snackbar
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success'|'error'}>({open: false, message: '', severity: 'success'});
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+
+  const RECAPTCHA_SITE_KEY = '6LcMSoorAAAAAIU3ZI8wh1TtxnXNmnwScxPLrplu';
 
   // Show account deleted message if redirected here
   React.useEffect(() => {
@@ -48,6 +52,10 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!recaptchaToken) {
+      setError('Please complete the CAPTCHA');
+      return;
+    }
     try {
       setError('');
       setLoading(true);
@@ -58,7 +66,8 @@ const Login: React.FC = () => {
         body: JSON.stringify({ 
           email, 
           password,
-          mfaToken: requiresMFA ? mfaToken : undefined
+          mfaToken: requiresMFA ? mfaToken : undefined,
+          recaptchaToken
         }),
       });
       
@@ -75,12 +84,14 @@ const Login: React.FC = () => {
         throw new Error(data.message || data.error || "Login failed");
       }
       
-      // Set success message and then navigate
       setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
-      // Use a small delay before navigating to allow snackbar to be seen
       setTimeout(() => {
-        navigate('/');
-      }, 500); // Adjust delay as needed
+        if (data.user && data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }, 500);
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
     } finally {
@@ -115,10 +126,13 @@ const Login: React.FC = () => {
         throw new Error(data.message || "MFA verification failed");
       }
       
-      // Set success message and then navigate
       setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
       setTimeout(() => {
-        navigate('/');
+        if (data.user && data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       }, 500);
     } catch (err) {
       setError('Invalid MFA token. Please try again.');
@@ -231,6 +245,11 @@ const Login: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
+              />
+              <ReCAPTCHA
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={(token: string | null) => setRecaptchaToken(token || '')}
+                style={{ margin: '16px 0' }}
               />
               <Button
                 type="submit"
