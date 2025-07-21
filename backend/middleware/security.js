@@ -80,7 +80,7 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/stepstunner',
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/StepStunner',
     ttl: 24 * 60 * 60, // 1 day
     autoRemove: 'native'
   }),
@@ -90,7 +90,7 @@ const sessionConfig = {
     maxAge: 24 * 60 * 60 * 1000, // 1 day
     sameSite: 'strict'
   },
-  name: 'stepstunner_session'
+  name: 'StepStunner_session'
 };
 
 // Security headers middleware

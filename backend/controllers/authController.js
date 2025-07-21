@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const speakeasy = require("speakeasy"); // For TOTP generation
+const axios = require('axios'); // Add at the top
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || 'YOUR_RECAPTCHA_SECRET_KEY'; // Add at the top
 // Optional: for auto-login after register
 
 exports.register = async (req, res) => {
@@ -168,9 +170,16 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password, mfaToken } = req.body;
-    const ipAddress = req.ip;
-    const userAgent = req.get('User-Agent');
+    const { email, password, mfaToken, recaptchaToken } = req.body;
+    // Verify reCAPTCHA
+    if (!recaptchaToken) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+    }
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+    const captchaRes = await axios.post(verifyUrl);
+    if (!captchaRes.data.success) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+    }
 
     // Log login attempt
     await ActivityLog.logActivity({
@@ -369,7 +378,16 @@ const sendOtpEmail = async (to, otp) => {
 
 exports.forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, recaptchaToken } = req.body;
+    // Verify reCAPTCHA
+    if (!recaptchaToken) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+    }
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+    const captchaRes = await axios.post(verifyUrl);
+    if (!captchaRes.data.success) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+    }
     const user = await User.findOne({ email });
     if (!user) {
       // For security, always respond with success

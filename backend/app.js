@@ -51,7 +51,8 @@ app.get('/', (req, res) => {
 });
 
 const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
+// Apply auth-specific rate limiting to auth routes
+app.use('/api/auth', authLimiter, authRoutes);
 
 const productRoutes = require('./routes/product');
 app.use('/api/products', productRoutes);
@@ -59,7 +60,7 @@ app.use('/api/products', productRoutes);
 const securityRoutes = require('./routes/security');
 app.use('/api/security', securityRoutes);
 
-
-
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
 
 module.exports = app;

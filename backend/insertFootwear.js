@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Product = require('./models/Product');
 
-const MONGO_URI = 'mongodb://localhost:27017/StepStunner';
+const MONGO_URI = 'mongodb://localhost:27017/StepStunner'; // Update if using a different URI
 
 const footwear = [
   // SNEAKERS

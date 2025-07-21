@@ -15,4 +15,12 @@ module.exports = (req, res, next) => {
   } catch (err) {
     res.status(401).json({ message: 'Token is not valid' });
   }
+};
+
+// Admin-only middleware
+module.exports.isAdmin = (req, res, next) => {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
 }; 

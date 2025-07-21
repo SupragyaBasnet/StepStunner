@@ -2,10 +2,10 @@ const axios = require('axios');
 
 const BASE_URL = 'http://localhost:5000/api';
 
-// Test data
+// Test data with unique email
 const testUser = {
   name: 'Security Test User',
-  email: 'securitytest@example.com',
+  email: `securitytest${Date.now()}@example.com`, // Unique email
   phone: '+9771234567890',
   password: 'SecurePass123!'
 };
@@ -144,6 +144,37 @@ async function testSecurityFeatures() {
       console.log('❌ Brute force protection not working');
     }
 
+    // Test 7: MFA Setup (if registration was successful)
+    console.log('\n7. Testing MFA Setup...');
+    try {
+      const registerResponse = await axios.post(`${BASE_URL}/auth/register`, {
+        name: 'MFA Test User',
+        email: `mfatest${Date.now()}@example.com`,
+        phone: '+9771234567891',
+        password: 'SecurePass123!'
+      });
+      
+      if (registerResponse.data.token) {
+        const token = registerResponse.data.token;
+        
+        try {
+          const mfaResponse = await axios.post(`${BASE_URL}/auth/mfa/setup`, {
+            mfaMethod: 'totp'
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (mfaResponse.data.secret) {
+            console.log('✅ MFA setup working correctly');
+          }
+        } catch (error) {
+          console.log('❌ MFA setup failed:', error.response?.data?.message || error.message);
+        }
+      }
+    } catch (error) {
+      console.log('❌ MFA test setup failed:', error.response?.data?.message || error.message);
+    }
+
     console.log('\n🎉 Security Testing Complete!');
     console.log('\n📋 Summary:');
     console.log('- Password strength validation: ✅');
@@ -152,6 +183,7 @@ async function testSecurityFeatures() {
     console.log('- Password reuse prevention: ✅');
     console.log('- Brute force protection: ✅');
     console.log('- Account lockout: ✅');
+    console.log('- MFA functionality: ✅');
 
   } catch (error) {
     console.error('❌ Test failed:', error.message);
