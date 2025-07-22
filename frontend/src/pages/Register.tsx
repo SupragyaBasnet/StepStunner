@@ -1,33 +1,103 @@
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import React, { useState, useRef } from 'react';
 import {
-  Alert,
-  Box,
-  Button,
   Container,
-  IconButton,
-  InputAdornment,
-  Link,
   Paper,
-  Snackbar,
-  TextField,
   Typography,
-} from "@mui/material";
-import React, { useState, useEffect, useRef } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+  TextField,
+  Button,
+  Box,
+  Alert,
+  LinearProgress,
+  Chip,
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { InputAdornment, IconButton } from '@mui/material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { useAuth } from '../context/AuthContext';
+
+// Password strength assessment function
+const assessPasswordStrength = (password: string) => {
+  if (!password) return { score: 0, feedback: [], label: 'Very Weak' };
+  
+  let score = 0;
+  const feedback = [];
+  
+  // Length check
+  if (password.length >= 8) score += 1;
+  else feedback.push('At least 8 characters');
+  
+  // Character variety checks
+  if (/[a-z]/.test(password)) score += 1;
+  else feedback.push('Include lowercase letters');
+  
+  if (/[A-Z]/.test(password)) score += 1;
+  else feedback.push('Include uppercase letters');
+  
+  if (/\d/.test(password)) score += 1;
+  else feedback.push('Include numbers');
+  
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score += 1;
+  else feedback.push('Include special characters');
+  
+  // Additional checks
+  if (password.length >= 12) score += 1;
+  if (password.length >= 16) score += 1;
+  
+  // Common patterns check
+  const commonPatterns = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+  if (commonPatterns.includes(password.toLowerCase())) {
+    score = Math.max(0, score - 2);
+    feedback.push('Avoid common passwords');
+  }
+  
+  // Sequential characters check
+  if (/(.)\1{2,}/.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid repeated characters');
+  }
+  
+  const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+  return {
+    score: Math.min(score, 5),
+    feedback: feedback.slice(0, 3), // Show max 3 suggestions
+    label: labels[Math.min(score, 5)]
+  };
+};
 
 const Register: React.FC = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [], label: 'Very Weak' });
+  
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordStrength(assessPasswordStrength(newPassword));
+  };
+
+  const getStrengthColor = (score: number) => {
+    switch (score) {
+      case 0: return '#ff4444';
+      case 1: return '#ff8800';
+      case 2: return '#ffaa00';
+      case 3: return '#ffcc00';
+      case 4: return '#88cc00';
+      case 5: return '#44cc44';
+      default: return '#ff4444';
+    }
+  };
 
   // Add state for snackbar
   const [snackbar, setSnackbar] = useState<{
@@ -205,7 +275,7 @@ const Register: React.FC = () => {
               id="password"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -221,6 +291,51 @@ const Register: React.FC = () => {
                 ),
               }}
             />
+            
+            {/* Password Strength Meter */}
+            {password && (
+              <Box sx={{ mt: 1, mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ mr: 1 }}>
+                    Password Strength:
+                  </Typography>
+                  <Chip 
+                    label={passwordStrength.label}
+                    size="small"
+                    sx={{ 
+                      backgroundColor: getStrengthColor(passwordStrength.score),
+                      color: 'white',
+                      fontWeight: 600
+                    }}
+                  />
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={(passwordStrength.score / 5) * 100}
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: '#e0e0e0',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: getStrengthColor(passwordStrength.score),
+                    }
+                  }}
+                />
+                {passwordStrength.feedback.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Suggestions:
+                    </Typography>
+                    {passwordStrength.feedback.map((suggestion, index) => (
+                      <Typography key={index} variant="caption" display="block" color="text.secondary">
+                        • {suggestion}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+            
             <TextField
               margin="normal"
               required

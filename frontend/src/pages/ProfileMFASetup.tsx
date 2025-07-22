@@ -384,131 +384,43 @@ const ProfileMFASetup: React.FC = () => {
               <Grid item xs={12}>
                 <Card sx={{ 
                   borderRadius: 4, 
-                  boxShadow: 1, 
+                  boxShadow: 2, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between',
                   minWidth: 270,
                   maxWidth: 500,
                   width: '100%',
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  justifyContent: 'space-between', 
                   px: 3,
                   py: 2,
-                  m: 'auto',
+                  m: 'auto'
                 }}>
-                  <CardContent sx={{ flexGrow: 1, p: 0 }}>
+                  <CardContent sx={{ p: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Key sx={{ mr: 1, color: '#d72660', flexShrink: 0 }} />
-                      <Typography variant="h6" fontWeight={700} sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        Authenticator App
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
-                      Use apps like Google Authenticator or Authy for time-based codes.
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={() => handleSetupMFA('totp')}
-                      disabled={loading}
-                      sx={{ 
-                        backgroundColor: '#d72660', 
-                        color: 'white', 
-                        fontWeight: 600, 
-                        borderRadius: 3, 
-                        '&:hover': { backgroundColor: '#b71c4a' } 
-                      }}
-                    >
-                      Setup TOTP
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-              <Grid item xs={12}>
-                <Card sx={{ 
-                  borderRadius: 4, 
-                  boxShadow: 1, 
-                  minWidth: 270,
-                  maxWidth: 500,
-                  width: '100%',
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  justifyContent: 'space-between', 
-                  px: 3,
-                  py: 2,
-                  m: 'auto',
-                }}>
-                  <CardContent sx={{ flexGrow: 1, p: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Smartphone sx={{ mr: 1, color: '#d72660', flexShrink: 0 }} />
-                      <Typography variant="h6" fontWeight={700} sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        SMS
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
-                      Receive verification codes via SMS to your phone.
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={() => handleSetupMFA('sms')}
-                      disabled={loading}
-                      sx={{ 
-                        backgroundColor: '#d72660', 
-                        color: 'white', 
-                        fontWeight: 600, 
-                        borderRadius: 3, 
-                        '&:hover': { backgroundColor: '#b71c4a' } 
-                      }}
-                    >
-                      Setup SMS
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-              <Grid item xs={12}>
-                <Card sx={{ 
-                  borderRadius: 4, 
-                  boxShadow: 1, 
-                  minWidth: 270,
-                  maxWidth: 500,
-                  width: '100%',
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  justifyContent: 'space-between', 
-                  px: 3,
-                  py: 2,
-                  m: 'auto',
-                }}>
-                  <CardContent sx={{ flexGrow: 1, p: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Email sx={{ mr: 1, color: '#d72660', flexShrink: 0 }} />
-                      <Typography variant="h6" fontWeight={700} sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <Email sx={{ color: '#d72660', fontSize: 32, mr: 2, flexShrink: 0 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         Email
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                       Receive verification codes via email.
                     </Typography>
                   </CardContent>
                   <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
                     <Button
-                      variant="contained"
                       fullWidth
+                      variant="contained"
                       onClick={() => handleSetupMFA('email')}
-                      disabled={loading}
                       sx={{ 
                         backgroundColor: '#d72660', 
                         color: 'white', 
-                        fontWeight: 600, 
-                        borderRadius: 3, 
-                        '&:hover': { backgroundColor: '#b71c4a' } 
+                        '&:hover': { backgroundColor: '#b71c4a' },
+                        borderRadius: 2,
+                        py: 1.5,
+                        fontWeight: 600
                       }}
                     >
-                      Setup Email
+                      SETUP EMAIL
                     </Button>
                   </CardActions>
                 </Card>
