@@ -12,21 +12,24 @@ interface User {
   email: string;
   phone?: string;
   profileImage?: string;
+  role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, recaptchaToken?: string) => Promise<any>;
   register: (userData: {
     name: string;
     email: string;
     phone: string;
     password: string;
-  }) => Promise<void>;
+    recaptchaToken?: string;
+  }) => Promise<any>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,67 +47,96 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    // Initialize state from localStorage
-    const savedUser = localStorage.getItem("stepstunnerUser");
-    if (savedUser) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Initialize authentication state on mount
+  useEffect(() => {
+    const initializeAuth = async () => {
       try {
-        return JSON.parse(savedUser);
-      } catch (e) {
-        console.error("Failed to parse user data from localStorage", e);
-        return null;
-      }
-    }
-    return null;
-  });
-
-  // Save user to localStorage whenever user state changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("stepstunnerUser", JSON.stringify(user));
-    } else {
-              localStorage.removeItem("stepstunnerUser");
-    }
-  }, [user]);
-
-  // Fetch user profile from backend on app load if token exists
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem('stepstunnerToken');
-      if (token) {
-        try {
+        const token = localStorage.getItem('stepstunnerToken');
+        const storedUser = localStorage.getItem('stepstunnerUser');
+        
+        console.log('Auth initialization - Token exists:', !!token);
+        console.log('Auth initialization - Stored user exists:', !!storedUser);
+        
+        if (token && storedUser) {
+          // Verify token with backend
           const res = await fetch('/api/auth/profile', {
             headers: { Authorization: `Bearer ${token}` },
           });
+          
+          console.log('Profile response status:', res.status);
+          
           if (res.ok) {
-            const data = await res.json();
-            setUser({
-              id: data._id,
-              name: data.name,
-              email: data.email,
-              phone: data.phone,
-              profileImage: data.profileImage,
-            });
+            const userData = await res.json();
+            console.log('Profile response data:', userData);
+            console.log('Role from profile:', userData.role);
+            
+            const user = {
+              id: userData._id,
+              name: userData.name,
+              email: userData.email,
+              phone: userData.phone,
+              profileImage: userData.profileImage,
+              role: userData.role,
+            };
+            console.log('Setting user state with role:', user.role);
+            setUser(user);
+            // Update localStorage with fresh data
+            localStorage.setItem("stepstunnerUser", JSON.stringify(user));
+          } else {
+            console.log('Token verification failed, clearing storage');
+            // Token is invalid, clear storage
+            localStorage.removeItem('stepstunnerToken');
+            localStorage.removeItem('stepstunnerUser');
+            setUser(null);
           }
-        } catch (err) {
-          // Optionally handle error
+        } else {
+          console.log('No token or user data found, ensuring clean state');
+          // No token or user data, ensure clean state
+          localStorage.removeItem('stepstunnerToken');
+          localStorage.removeItem('stepstunnerUser');
+          setUser(null);
         }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        // Clear storage on error
+        localStorage.removeItem('stepstunnerToken');
+        localStorage.removeItem('stepstunnerUser');
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchProfile();
+
+    initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, recaptchaToken?: string) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, recaptchaToken }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || data.error || "Login failed");
-    setUser({ id: data.user.id, name: data.user.name, email: data.user.email, phone: data.user.phone, profileImage: data.user.profileImage });
-            localStorage.setItem("stepstunnerToken", data.token);
+    
+    const userData = { 
+      id: data.user.id, 
+      name: data.user.name, 
+      email: data.user.email, 
+      phone: data.user.phone, 
+      profileImage: data.user.profileImage,
+      role: data.user.role 
+    };
+    
+    setUser(userData);
+    localStorage.setItem("stepstunnerToken", data.token);
+    localStorage.setItem("stepstunnerUser", JSON.stringify(userData));
     localStorage.removeItem("profileImage");
+    
+    return userData;
   };
 
   const register = async (userData: {
@@ -112,6 +144,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: string;
     phone: string;
     password: string;
+    recaptchaToken?: string;
   }) => {
     const res = await fetch(
       '/api/auth/register',
@@ -123,6 +156,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           email: userData.email,
           phone: userData.phone,
           password: userData.password,
+          recaptchaToken: userData.recaptchaToken,
         }),
       }
     );
@@ -130,12 +164,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Registration failed");
     localStorage.removeItem("profileImage");
-    await login(userData.email, userData.password);
+    // Remove automatic login - user should login manually after registration
   };
 
   const logout = () => {
     setUser(null);
-    // The useEffect will handle removing from localStorage
+    localStorage.removeItem("stepstunnerToken");
+    localStorage.removeItem("stepstunnerUser");
+    localStorage.removeItem("profileImage");
   };
 
   const resetPassword = async (email: string) => {
@@ -147,15 +183,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        setUser, // <-- Added setUser to context value
+        setUser,
         login,
         register,
         logout,
         resetPassword,
         isAuthenticated: !!user,
+        loading,
       }}
     >
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

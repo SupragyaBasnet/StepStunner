@@ -1,18 +1,9 @@
-import React, { useState } from 'react';
 import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  Alert,
-  InputAdornment,
-  IconButton,
+  Alert, Box, Button, Container, Paper, TextField, Typography
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import React, { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useNavigate } from 'react-router-dom';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -22,7 +13,7 @@ const ForgotPassword: React.FC = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const navigate = useNavigate();
 
-  const RECAPTCHA_SITE_KEY = 'YOUR_NEW_V2_SITE_KEY'; // Replace with your new v2 site key from Google Admin Console
+  const RECAPTCHA_SITE_KEY = '6Le8h4orAAAAAFEUIK-XkVpG2YEGf5xln0bg8jpM'; // Replace with your new v2 site key from Google Admin Console
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();

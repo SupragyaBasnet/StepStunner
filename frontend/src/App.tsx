@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import React from 'react';
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -39,6 +39,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminProducts from './pages/AdminProducts';
 import AdminOrders from './pages/AdminOrders';
 import AdminLogs from './pages/AdminLogs';
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 
 const theme = createTheme({
   palette: {
@@ -64,94 +65,111 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
 };
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  
+  // Show loading or wait until auth is initialized
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
   if (!isAuthenticated) return <Navigate to="/login" />;
   if (user?.role !== 'admin') return <Navigate to="/" />;
   return <>{children}</>;
 };
 
+const AppContent: React.FC = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+      }}
+    >
+      {!isAdminRoute && <Navbar />}
+      <Box component="main" sx={{ flexGrow: 1 }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetails />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route
+            path="/cart"
+            element={
+              <PrivateRoute>
+                <Cart />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile/*"
+            element={
+              <PrivateRoute>
+                <ProfileLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<Navigate to="info" replace />} />
+            <Route path="image" element={<ProfileImage />} />
+            <Route path="info" element={<ProfileOverview />} />
+            <Route path="orders" element={<ProfileOrders />} />
+            <Route path="addresses" element={<ProfileAddresses />} />
+            <Route path="mfa" element={<ProfileMFASetup />} />
+            <Route path="settings" element={<ProfileSettings />} />
+          </Route>
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <Routes>
+                    <Route path="" element={<AdminDashboard />} />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="logs" element={<AdminLogs />} />
+                  </Routes>
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+         
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
+          <Route path="/set-new-password" element={<SetNewPassword />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
+          <Route path="/orderconfirmed" element={<OrderConfirmed />} />
+        </Routes>
+      </Box>
+      {!isAdminRoute && <Footer />}
+    </Box>
+  );
+};
+
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <CartProvider>
-          <Router>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: '100vh',
-              }}
-            >
-              <Navbar />
-              <Box component="main" sx={{ flexGrow: 1 }}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/products/:id" element={<ProductDetails />} />
-                  <Route path="/about" element={<AboutUs />} />
-                  <Route
-                    path="/cart"
-                    element={
-                      <PrivateRoute>
-                        <Cart />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile/*"
-                    element={
-                      <PrivateRoute>
-                        <ProfileLayout />
-                      </PrivateRoute>
-                    }
-                  >
-                    <Route index element={<Navigate to="info" replace />} />
-                    <Route path="image" element={<ProfileImage />} />
-                    <Route path="info" element={<ProfileOverview />} />
-                    <Route path="orders" element={<ProfileOrders />} />
-                    <Route path="addresses" element={<ProfileAddresses />} />
-                    <Route path="mfa" element={<ProfileMFASetup />} />
-                    <Route path="settings" element={<ProfileSettings />} />
-                  </Route>
-                  <Route
-                    path="/admin/*"
-                    element={
-                      <AdminRoute>
-                        <AdminLayout>
-                          <Routes>
-                            <Route path="" element={<AdminDashboard />} />
-                            <Route path="users" element={<AdminUsers />} />
-                            <Route path="products" element={<AdminProducts />} />
-                            <Route path="orders" element={<AdminOrders />} />
-                            <Route path="logs" element={<AdminLogs />} />
-                          </Routes>
-                        </AdminLayout>
-                      </AdminRoute>
-                    }
-                  />
-                 
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/help" element={<Help />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/verify-otp" element={<VerifyOtp />} />
-                  <Route path="/set-new-password" element={<SetNewPassword />} />
-                  <Route path="/payment-success" element={<PaymentSuccess />} />
-                  <Route path="/payment-failure" element={<PaymentFailure />} />
-                  <Route path="/orderconfirmed" element={<OrderConfirmed />} />
-                </Routes>
-              </Box>
-              <Footer />
-            </Box>
-          </Router>
-        </CartProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <GoogleReCaptchaProvider reCaptchaKey="6Le8h4orAAAAAFEUIK-XkVpG2YEGf5xln0bg8jpM">
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <CartProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GoogleReCaptchaProvider>
   );
 };
 

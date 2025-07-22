@@ -7,11 +7,11 @@ import {
   ListItemText,
   Paper,
   Snackbar,
-  Typography,
+  Typography
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const ProfileAddresses: React.FC = () => {
   const { user } = useAuth() as any;
@@ -77,8 +77,8 @@ const ProfileAddresses: React.FC = () => {
         p: 4,
         minWidth: 350,
         maxWidth: 520,
-        minHeight: 560,
-        maxHeight: 560, // Fix the height
+        minHeight: 625,
+        maxHeight: 625, // Fix the height
         boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
         mx: "auto",
         width: "100%",

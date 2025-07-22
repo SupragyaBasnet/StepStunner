@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Paper, Snackbar, Alert } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
+import { Alert, Box, Button, Paper, Snackbar, TextField, Typography } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ProfileOverview: React.FC = () => {
   const { user, setUser } = useAuth() as any;
@@ -69,7 +69,7 @@ const ProfileOverview: React.FC = () => {
   };
 
   return (
-    <Paper sx={{ borderRadius: 5, p: 4, minWidth: 350, maxWidth: 520, minHeight: 560, boxShadow: '0 4px 24px rgba(0,0,0,0.06)', mx: 'auto', width: '100%' }}>
+    <Paper sx={{ borderRadius: 5, p: 4, minWidth: 350, maxWidth: 520, minHeight: 625, boxShadow: '0 4px 24px rgba(0,0,0,0.06)', mx: 'auto', width: '100%' }}>
       <Typography variant="h5" fontWeight={700} gutterBottom>Profile Overview</Typography>
       <Box component="form" onSubmit={handleProfileSubmit}>
         <TextField

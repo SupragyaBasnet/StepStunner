@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardContent, CardMedia, Container, Grid, Typography, Paper, Chip, CircularProgress } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import sneakersImg from '../assets/Nike_Panda_Dunks_Shoe.png';
-import heelsImg from '../assets/heels/Jimmy_Choo_us.png';
-import flatsImg from '../assets/flats/White_Products_by_Louis_Vuitton-_LV_Sunset_Flat_Comfort_Sandal.png';
 import heroImage from '../assets/hero1.jpg';
 import { products } from '../data/products';
+
+// Import images with fallbacks
+import sneakersImg from '../assets/Nike_Panda_Dunks_Shoe.png';
+// Fallback images for heels and flats if they don't exist
+const heelsImg = 'https://via.placeholder.com/300x200?text=Heels';
+const flatsImg = 'https://via.placeholder.com/300x200?text=Flats';
 
 const categories = [
   {
@@ -89,7 +92,7 @@ const Home: React.FC = () => {
           Step Into Style
         </Typography>
         <Typography variant="h5" sx={{ color: '#222', mb: 4, fontWeight: 500, textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
-          Discover the best in women’s sneakers, heels, and flats
+          Discover the best in women's sneakers, heels, and flats
         </Typography>
         <Button
           variant="contained"
@@ -320,7 +323,7 @@ const Home: React.FC = () => {
           Find Your Perfect Pair Today
         </Typography>
         <Typography variant="body1" paragraph color="text.secondary">
-          StepStunner brings you the latest in women’s footwear. Shop now and step up your style!
+          StepStunner brings you the latest in women's footwear. Shop now and step up your style!
         </Typography>
         <Button
           variant="contained"

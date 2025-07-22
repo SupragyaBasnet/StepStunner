@@ -1,32 +1,23 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
-  Avatar,
-  Box,
-  Card,
+  Alert, Avatar,
+  Box, Button, Card,
   CardActions,
   CardContent,
-  Chip,
-  Collapse,
+  Chip, CircularProgress, Collapse,
   Divider,
   IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Paper,
-  Tooltip,
-  Typography,
-  Button,
-  Rating,
-  TextField,
-  Snackbar,
-  Alert,
-  CircularProgress,
+  Paper, Rating, Snackbar, TextField, Tooltip,
+  Typography
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const ExpandMore = styled((props: any) => {
   const { expand, ...other } = props;
@@ -162,8 +153,8 @@ const ProfileOrders = () => {
       p: 4,
       minWidth: 350,
       maxWidth: 520,
-      minHeight: 560,
-      maxHeight: 560, // Fix the height
+      minHeight: 625,
+      maxHeight: 625, // Fix the height
       boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
       mx: "auto",
       width: "100%",

@@ -1,40 +1,17 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Alert,
-  TextField,
-  Card,
-  CardContent,
-  CardActions,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Stepper,
-  Step,
-  StepLabel,
-  Chip,
-  Grid,
-  IconButton,
-  InputAdornment
-} from '@mui/material';
-import {
-  Security,
-  QrCode2,
-  Visibility,
-  VisibilityOff,
-  CheckCircle,
-  Cancel,
-  Smartphone,
-  Email,
-  Key
+  Cancel, CheckCircle, Email,
+  Key, Security, Smartphone, Visibility,
+  VisibilityOff
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import {
+  Alert, Box, Button, Card, CardActions, CardContent, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid,
+  IconButton,
+  InputAdornment, Paper, Step,
+  StepLabel, Stepper, TextField, Typography
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ProfileMFASetup: React.FC = () => {
   const { user } = useAuth() as any;
@@ -201,6 +178,7 @@ const ProfileMFASetup: React.FC = () => {
 
   if (setupStep > 0) {
     return (
+      
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" gutterBottom align="center">
@@ -351,6 +329,7 @@ const ProfileMFASetup: React.FC = () => {
   }
 
   return (
+    <Paper sx={{ borderRadius: 5, p: 4, minWidth: 350, maxWidth: 515, minHeight: 625, boxShadow: '0 4px 24px rgba(0,0,0,0.06)', mx: 'auto', width: '100%' }}>
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
         Two-Factor Authentication
@@ -517,7 +496,8 @@ const ProfileMFASetup: React.FC = () => {
         </DialogActions>
       </Dialog>
     </Container>
+    </Paper>
   );
 };
 
-export default ProfileMFASetup; 
+export default ProfileMFASetup;
