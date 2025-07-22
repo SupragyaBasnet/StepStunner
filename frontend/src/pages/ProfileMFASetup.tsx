@@ -179,8 +179,8 @@ const ProfileMFASetup: React.FC = () => {
   if (setupStep > 0) {
     return (
       
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
+      <Container maxWidth="md">
+         <Paper elevation={3} sx={{ width: '100%', maxWidth: 600, height: 620, overflowY: 'auto', p: 2, borderRadius: 5, mx: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: '#fff' }}>
           <Typography variant="h4" gutterBottom align="center">
             Setup Two-Factor Authentication
           </Typography>
@@ -258,7 +258,7 @@ const ProfileMFASetup: React.FC = () => {
               <Grid container spacing={1} sx={{ mb: 3 }}>
                 {backupCodes.map((code, index) => (
                   <Grid item xs={6} sm={4} md={3} key={index}>
-                    <Chip label={code} variant="outlined" fullWidth />
+                    <Chip label={code} variant="outlined" />
                   </Grid>
                 ))}
               </Grid>
@@ -266,7 +266,7 @@ const ProfileMFASetup: React.FC = () => {
               <Button
                 variant="contained"
                 onClick={() => setSetupStep(2)}
-                sx={{ mr: 2 }}
+                sx={{ mr: 2, backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}
               >
                 Continue to Verification
               </Button>
@@ -279,6 +279,7 @@ const ProfileMFASetup: React.FC = () => {
                   setSecret('');
                   setBackupCodes([]);
                 }}
+                sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
               >
                 Cancel
               </Button>
@@ -308,7 +309,7 @@ const ProfileMFASetup: React.FC = () => {
                 variant="contained"
                 onClick={handleVerifyMFA}
                 disabled={loading || !verificationToken}
-                sx={{ mr: 2 }}
+                sx={{ mr: 2, backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}
               >
                 {loading ? 'Verifying...' : 'Verify & Enable MFA'}
               </Button>
@@ -318,6 +319,7 @@ const ProfileMFASetup: React.FC = () => {
                   setSetupStep(0);
                   setVerificationToken('');
                 }}
+                sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
               >
                 Cancel
               </Button>
@@ -329,134 +331,192 @@ const ProfileMFASetup: React.FC = () => {
   }
 
   return (
-    <Paper sx={{ borderRadius: 5, p: 4, minWidth: 350, maxWidth: 515, minHeight: 625, boxShadow: '0 4px 24px rgba(0,0,0,0.06)', mx: 'auto', width: '100%' }}>
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Two-Factor Authentication
-      </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
-
-      {mfaStatus?.enabled ? (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
-              <Typography variant="h6">
-                MFA is Enabled
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              Your account is protected with {getMethodDescription(mfaStatus.method).toLowerCase()}
-            </Typography>
-          </CardContent>
-          <CardActions>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={() => setSetupStep(3)}
-              startIcon={<Cancel />}
-            >
-              Disable MFA
-            </Button>
-          </CardActions>
-        </Card>
-      ) : (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Cancel sx={{ color: 'warning.main', mr: 1 }} />
-              <Typography variant="h6">
-                MFA is Disabled
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              Enable two-factor authentication to add an extra layer of security to your account.
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
-
-      {!mfaStatus?.enabled && (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Card>
+    <Container maxWidth="md" sx={{  display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh' }}>
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 600, height: 625, overflowY: 'auto', p: 2, borderRadius: 5, mx: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: '#fff' }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#d72660', mb: 3, textAlign: 'center' }}>
+          Two-Factor Authentication
+        </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}>{error}</Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}>{success}</Alert>
+        )}
+        <Box sx={{ width: '100%', maxWidth: 500, mx: 'auto' }}>
+          {mfaStatus?.enabled ? (
+            <Card sx={{ mb: 3, borderRadius: 4, boxShadow: 2 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Key sx={{ mr: 1 }} />
-                  <Typography variant="h6">Authenticator App</Typography>
+                  <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
+                  <Typography variant="h6" fontWeight={700}>MFA is Enabled</Typography>
                 </Box>
-                <Typography variant="body2" sx={{ mb: 2 }}>
-                  Use apps like Google Authenticator or Authy for time-based codes.
+                <Typography variant="body2" color="text.secondary">
+                  Your account is protected with {getMethodDescription(mfaStatus.method).toLowerCase()}
                 </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => handleSetupMFA('totp')}
-                  disabled={loading}
-                >
-                  Setup TOTP
-                </Button>
               </CardContent>
+              <CardActions>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setSetupStep(3)}
+                  startIcon={<Cancel />}
+                  sx={{ fontWeight: 600, borderRadius: 3 }}
+                >
+                  Disable MFA
+                </Button>
+              </CardActions>
             </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card>
+          ) : (
+            <Card sx={{ mb: 3, borderRadius: 4, boxShadow: 2 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Smartphone sx={{ mr: 1 }} />
-                  <Typography variant="h6">SMS</Typography>
+                  <Cancel sx={{ color: 'warning.main', mr: 1 }} />
+                  <Typography variant="h6" fontWeight={700}>MFA is Disabled</Typography>
                 </Box>
-                <Typography variant="body2" sx={{ mb: 2 }}>
-                  Receive verification codes via SMS to your phone.
+                <Typography variant="body2" color="text.secondary">
+                  Enable two-factor authentication to add an extra layer of security to your account.
                 </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => handleSetupMFA('sms')}
-                  disabled={loading}
-                >
-                  Setup SMS
-                </Button>
               </CardContent>
             </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Email sx={{ mr: 1 }} />
-                  <Typography variant="h6">Email</Typography>
-                </Box>
-                <Typography variant="body2" sx={{ mb: 2 }}>
-                  Receive verification codes via email.
-                </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => handleSetupMFA('email')}
-                  disabled={loading}
-                >
-                  Setup Email
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
-
+          )}
+          {!mfaStatus?.enabled && (
+            <Grid container spacing={3} justifyContent="center" alignItems="stretch" sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <Card sx={{ 
+                  borderRadius: 4, 
+                  boxShadow: 1, 
+                  minWidth: 270,
+                  maxWidth: 500,
+                  width: '100%',
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between', 
+                  px: 3,
+                  py: 2,
+                  m: 'auto',
+                }}>
+                  <CardContent sx={{ flexGrow: 1, p: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Key sx={{ mr: 1, color: '#d72660', flexShrink: 0 }} />
+                      <Typography variant="h6" fontWeight={700} sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        Authenticator App
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
+                      Use apps like Google Authenticator or Authy for time-based codes.
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => handleSetupMFA('totp')}
+                      disabled={loading}
+                      sx={{ 
+                        backgroundColor: '#d72660', 
+                        color: 'white', 
+                        fontWeight: 600, 
+                        borderRadius: 3, 
+                        '&:hover': { backgroundColor: '#b71c4a' } 
+                      }}
+                    >
+                      Setup TOTP
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+              <Grid item xs={12}>
+                <Card sx={{ 
+                  borderRadius: 4, 
+                  boxShadow: 1, 
+                  minWidth: 270,
+                  maxWidth: 500,
+                  width: '100%',
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between', 
+                  px: 3,
+                  py: 2,
+                  m: 'auto',
+                }}>
+                  <CardContent sx={{ flexGrow: 1, p: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Smartphone sx={{ mr: 1, color: '#d72660', flexShrink: 0 }} />
+                      <Typography variant="h6" fontWeight={700} sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        SMS
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
+                      Receive verification codes via SMS to your phone.
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => handleSetupMFA('sms')}
+                      disabled={loading}
+                      sx={{ 
+                        backgroundColor: '#d72660', 
+                        color: 'white', 
+                        fontWeight: 600, 
+                        borderRadius: 3, 
+                        '&:hover': { backgroundColor: '#b71c4a' } 
+                      }}
+                    >
+                      Setup SMS
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+              <Grid item xs={12}>
+                <Card sx={{ 
+                  borderRadius: 4, 
+                  boxShadow: 1, 
+                  minWidth: 270,
+                  maxWidth: 500,
+                  width: '100%',
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between', 
+                  px: 3,
+                  py: 2,
+                  m: 'auto',
+                }}>
+                  <CardContent sx={{ flexGrow: 1, p: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Email sx={{ mr: 1, color: '#d72660', flexShrink: 0 }} />
+                      <Typography variant="h6" fontWeight={700} sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        Email
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
+                      Receive verification codes via email.
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => handleSetupMFA('email')}
+                      disabled={loading}
+                      sx={{ 
+                        backgroundColor: '#d72660', 
+                        color: 'white', 
+                        fontWeight: 600, 
+                        borderRadius: 3, 
+                        '&:hover': { backgroundColor: '#b71c4a' } 
+                      }}
+                    >
+                      Setup Email
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            </Grid>
+          )}
+        </Box>
+      </Paper>
       {/* Disable MFA Dialog */}
       <Dialog open={setupStep === 3} onClose={() => setSetupStep(0)}>
         <DialogTitle>Disable Two-Factor Authentication</DialogTitle>
@@ -496,7 +556,6 @@ const ProfileMFASetup: React.FC = () => {
         </DialogActions>
       </Dialog>
     </Container>
-    </Paper>
   );
 };
 

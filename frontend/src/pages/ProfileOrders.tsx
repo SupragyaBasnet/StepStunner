@@ -235,11 +235,12 @@ const ProfileOrders = () => {
                        borderRadius: 3,
                        textTransform: 'none',
                        fontWeight: 600,
-                       borderColor: 'rgb(255,106,106)',
-                       color: 'rgb(255,106,106)',
+                       borderColor: '#d72660',
+                       color: '#d72660',
                        '&:hover': { 
-                         borderColor: 'rgb(235,86,86)',
-                         backgroundColor: 'rgba(255,106,106,0.04)'
+                         borderColor: '#d72660',
+                         backgroundColor: 'rgba(215,38,96,0.08)',
+                         color: '#d72660'
                        },
                      }}
                      onClick={() => handleLeaveReview(order._id)}
@@ -254,11 +255,11 @@ const ProfileOrders = () => {
                    size="small"
                    sx={{
                      mt: 1, mb: 1,
-                     background: 'rgb(255,106,106)',
+                     backgroundColor: '#d72660',
                      borderRadius: 3,
                      textTransform: 'none',
                      fontWeight: 600,
-                     '&:hover': { background: 'rgb(235,86,86)' },
+                     '&:hover': { backgroundColor: '#b71c4a' },
                    }}
                    onClick={() => handleLeaveReview(order._id)}
                  >
@@ -303,11 +304,11 @@ const ProfileOrders = () => {
                        variant="contained"
                        size="small"
                        sx={{
-                         background: 'rgb(255,106,106)',
+                         backgroundColor: '#d72660',
                          borderRadius: 3,
                          textTransform: 'none',
                          fontWeight: 600,
-                         '&:hover': { background: 'rgb(235,86,86)' },
+                         '&:hover': { backgroundColor: '#b71c4a' },
                        }}
                        onClick={() => handleSubmitReview(order._id)}
                        disabled={!reviewRating || !reviewText.trim() || isSubmitting}
