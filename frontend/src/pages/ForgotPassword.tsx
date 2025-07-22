@@ -1,9 +1,15 @@
+import React, { useState, useRef } from 'react';
 import {
-  Alert, Box, Button, Container, Paper, TextField, Typography
+  Alert,
+  Box,
+  Button,
+  Container,
+  Paper,
+  TextField,
+  Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { useNavigate } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,17 +18,18 @@ const ForgotPassword: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const navigate = useNavigate();
-
-  const RECAPTCHA_SITE_KEY = '6Le8h4orAAAAAFEUIK-XkVpG2YEGf5xln0bg8jpM'; // Replace with your new v2 site key from Google Admin Console
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    
     if (!recaptchaToken) {
       setError('Please complete the CAPTCHA');
       return;
     }
+    
     setLoading(true);
     try {
       const res = await fetch('/api/auth/forgot-password', {
@@ -39,7 +46,7 @@ const ForgotPassword: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
-    setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -81,17 +88,20 @@ const ForgotPassword: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
               />
-              <ReCAPTCHA
-                sitekey={RECAPTCHA_SITE_KEY}
-                onChange={token => setRecaptchaToken(token || '')}
-                style={{ margin: '16px 0' }}
-              />
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                <ReCAPTCHA
+                  sitekey="6LesJYsrAAAAAM6slcdSbytahY5L87k2N_1uXyyE"
+                  ref={recaptchaRef}
+                  onChange={(token) => setRecaptchaToken(token || '')}
+                  size="normal"
+                />
+              </Box>
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
-                disabled={loading || !email}
+                disabled={loading || !email || !recaptchaToken}
               >
                 Send OTP
               </Button>

@@ -57,22 +57,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const token = localStorage.getItem('stepstunnerToken');
         const storedUser = localStorage.getItem('stepstunnerUser');
         
-        console.log('Auth initialization - Token exists:', !!token);
-        console.log('Auth initialization - Stored user exists:', !!storedUser);
-        
         if (token && storedUser) {
           // Verify token with backend
           const res = await fetch('/api/auth/profile', {
             headers: { Authorization: `Bearer ${token}` },
           });
           
-          console.log('Profile response status:', res.status);
-          
           if (res.ok) {
             const userData = await res.json();
-            console.log('Profile response data:', userData);
-            console.log('Role from profile:', userData.role);
-            
             const user = {
               id: userData._id,
               name: userData.name,
@@ -81,19 +73,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               profileImage: userData.profileImage,
               role: userData.role,
             };
-            console.log('Setting user state with role:', user.role);
             setUser(user);
             // Update localStorage with fresh data
             localStorage.setItem("stepstunnerUser", JSON.stringify(user));
           } else {
-            console.log('Token verification failed, clearing storage');
             // Token is invalid, clear storage
             localStorage.removeItem('stepstunnerToken');
             localStorage.removeItem('stepstunnerUser');
             setUser(null);
           }
         } else {
-          console.log('No token or user data found, ensuring clean state');
           // No token or user data, ensure clean state
           localStorage.removeItem('stepstunnerToken');
           localStorage.removeItem('stepstunnerUser');

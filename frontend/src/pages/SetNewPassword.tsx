@@ -58,7 +58,7 @@ const SetNewPassword: React.FC = () => {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword }),
+        body: JSON.stringify({ email, otp, password: newPassword }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to reset password');

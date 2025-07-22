@@ -39,7 +39,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminProducts from './pages/AdminProducts';
 import AdminOrders from './pages/AdminOrders';
 import AdminLogs from './pages/AdminLogs';
-import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const theme = createTheme({
   palette: {
@@ -158,18 +158,16 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <GoogleReCaptchaProvider reCaptchaKey="6Le8h4orAAAAAFEUIK-XkVpG2YEGf5xln0bg8jpM">
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AuthProvider>
-          <CartProvider>
-            <Router>
-              <AppContent />
-            </Router>
-          </CartProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </GoogleReCaptchaProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <CartProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

@@ -12,10 +12,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 const Register: React.FC = () => {
   const [name, setName] = useState("");
@@ -29,7 +28,6 @@ const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
-  const { executeRecaptcha } = useGoogleReCaptcha();
 
   // Add state for snackbar
   const [snackbar, setSnackbar] = useState<{
@@ -104,28 +102,9 @@ const Register: React.FC = () => {
       return;
     }
 
-    if (!executeRecaptcha) {
-      setSnackbar({
-        open: true,
-        message: "CAPTCHA not ready",
-        severity: "error",
-      });
-      return;
-    }
-
     try {
       setLoading(true);
-      const recaptchaToken = await executeRecaptcha('register');
-      if (!recaptchaToken) {
-        setSnackbar({
-          open: true,
-          message: "CAPTCHA failed",
-          severity: "error",
-        });
-        return;
-      }
-      
-      await register({ name, email, phone: '+977' + phone, password, recaptchaToken });
+      await register({ name, email, phone: '+977' + phone, password });
 
       setSnackbar({
         open: true,
@@ -136,7 +115,7 @@ const Register: React.FC = () => {
       // Delay navigation to show snackbar
       setTimeout(() => {
         navigate("/login");
-      }, 500);
+      }, 1000);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create an account";

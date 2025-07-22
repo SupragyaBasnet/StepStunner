@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Box,
@@ -18,7 +18,7 @@ import {
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Visibility, VisibilityOff, Security } from '@mui/icons-material';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -34,7 +34,8 @@ const Login: React.FC = () => {
 
   // Add state for snackbar
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success'|'error'}>({open: false, message: '', severity: 'success'});
-  const { executeRecaptcha } = useGoogleReCaptcha();
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -61,24 +62,20 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Temporarily disable reCAPTCHA validation for testing
-    // if (!executeRecaptcha) {
-    //   setError('CAPTCHA not ready');
-    //   return;
-    // }
-    // const recaptchaToken = await executeRecaptcha('login');
-    // if (!recaptchaToken) {
-    //   setError('CAPTCHA failed');
-    //   return;
-    // }
+
+    if (!recaptchaToken) {
+      setError('Please complete the CAPTCHA');
+      return;
+    }
+
     try {
       setError('');
       setLoading(true);
-      
+
       // Use AuthContext login function instead of direct API call
-      const userData = await login(email, password);
-      
-      setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
+      const userData = await login(email, password, recaptchaToken);
+
+      setSnackbar({ open: true, message: 'Login successful!', severity: 'success' });
       setTimeout(() => {
         // Check if user is admin and navigate accordingly
         if (userData.role === 'admin') {
@@ -86,7 +83,7 @@ const Login: React.FC = () => {
         } else {
           navigate('/');
         }
-      }, 500);
+      }, 1000);
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
     } finally {
@@ -100,27 +97,27 @@ const Login: React.FC = () => {
       setError('Please enter your MFA token');
       return;
     }
-    
+
     try {
       setError('');
       setLoading(true);
-      
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
           mfaToken
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "MFA verification failed");
       }
-      
+
       setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
       setTimeout(() => {
         if (data.user && data.user.role === 'admin') {
@@ -181,7 +178,7 @@ const Login: React.FC = () => {
             <Typography variant="h4" component="h1" gutterBottom align="center">
               {requiresMFA ? 'Two-Factor Authentication' : 'Sign In'}
             </Typography>
-            
+
             {requiresMFA && (
               <Box sx={{ mb: 3 }}>
                 <Stepper activeStep={1} sx={{ mb: 3 }}>
@@ -198,13 +195,13 @@ const Login: React.FC = () => {
                 </Alert>
               </Box>
             )}
-            
+
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
-            
+
             {!requiresMFA ? (
               // Step 1: Email and Password
               <Box component="form" onSubmit={handleSubmit}>
@@ -246,12 +243,20 @@ const Login: React.FC = () => {
                     ),
                   }}
                 />
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                  <ReCAPTCHA
+                    sitekey="6LesJYsrAAAAAM6slcdSbytahY5L87k2N_1uXyyE"
+                    onChange={token => setRecaptchaToken(token || '')}
+                    size="normal"
+                  />
+                </Box>
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
                   sx={{ mt: 3, mb: 2 }}
-                  disabled={loading}
+                  disabled={loading || !recaptchaToken}
+                  color="primary"
                 >
                   {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
@@ -310,14 +315,14 @@ const Login: React.FC = () => {
           </Paper>
         )}
       </Box>
-      
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({...snackbar, open: false})}
       >
-        <Alert 
-          onClose={() => setSnackbar({...snackbar, open: false})} 
+        <Alert
+          onClose={() => setSnackbar({...snackbar, open: false})}
           severity={snackbar.severity}
         >
           {snackbar.message}

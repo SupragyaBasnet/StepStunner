@@ -6,9 +6,8 @@ import { products } from '../data/products';
 
 // Import images with fallbacks
 import sneakersImg from '../assets/Nike_Panda_Dunks_Shoe.png';
-// Fallback images for heels and flats if they don't exist
-const heelsImg = 'https://via.placeholder.com/300x200?text=Heels';
-const flatsImg = 'https://via.placeholder.com/300x200?text=Flats';
+import heelsImg from '../assets/heels/Steve_Madden_Manzie_Heeled_Sandal_Women_s_Shoes_White_Zappos.png';
+import flatsImg from '../assets/flats/White_Products_by_Louis_Vuitton-_LV_Sunset_Flat_Comfort_Sandal.png';
 
 const categories = [
   {
