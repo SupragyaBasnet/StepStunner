@@ -26,9 +26,6 @@ app.use(securityHeaders);
 // Apply session management
 app.use(session(sessionConfig));
 
-// Apply general rate limiting
-app.use(generalLimiter);
-
 // Apply activity logging
 app.use(activityLogger);
 
@@ -55,12 +52,14 @@ const authRoutes = require('./routes/auth');
 app.use('/api/auth', authLimiter, authRoutes);
 
 const productRoutes = require('./routes/product');
-app.use('/api/products', productRoutes);
+// Apply general rate limiting to product routes
+app.use('/api/products', generalLimiter, productRoutes);
 
 const securityRoutes = require('./routes/security');
 app.use('/api/security', securityRoutes);
 
 const adminRoutes = require('./routes/admin');
+// Admin routes without rate limiting to prevent dashboard issues
 app.use('/api/admin', adminRoutes);
 
 module.exports = app;
