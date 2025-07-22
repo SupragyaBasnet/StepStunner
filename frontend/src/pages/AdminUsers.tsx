@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useAuth } from '../context/AuthContext';
 
 interface User {
   id: string;
@@ -27,14 +28,43 @@ const AdminUsers: React.FC = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const { user } = useAuth();
 
   const fetchUsers = async () => {
-    setLoading(true);
-    const res = await fetch(`/api/admin/users?search=${encodeURIComponent(search)}&page=${page + 1}&limit=${rowsPerPage}`);
-    const data = await res.json();
-    setUsers(data.users || []);
-    setTotal(data.total || 0);
-    setLoading(false);
+    try {
+      setLoading(true);
+      
+      // Check if user is admin
+      if (!user || user.role !== 'admin') {
+        console.error('Admin access required');
+        return;
+      }
+      
+      const token = localStorage.getItem('stepstunnerToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+      
+      const res = await fetch(`/api/admin/users?search=${encodeURIComponent(search)}&page=${page + 1}&limit=${rowsPerPage}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        console.error('Failed to fetch users:', res.statusText);
+        return;
+      }
+      
+      const data = await res.json();
+      setUsers(data.users || []);
+      setTotal(data.total || 0);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -69,9 +99,13 @@ const AdminUsers: React.FC = () => {
   const handleEditSave = async () => {
     if (!editUser) return;
     setEditLoading(true);
+    const token = localStorage.getItem('stepstunnerToken');
     await fetch(`/api/admin/users/${editUser.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(editUser),
     });
     setEditLoading(false);
@@ -85,7 +119,13 @@ const AdminUsers: React.FC = () => {
   const handleDelete = async () => {
     if (!deleteUser) return;
     setDeleteLoading(true);
-    await fetch(`/api/admin/users/${deleteUser.id}`, { method: 'DELETE' });
+    const token = localStorage.getItem('stepstunnerToken');
+    await fetch(`/api/admin/users/${deleteUser.id}`, { 
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     setDeleteLoading(false);
     closeDelete();
     fetchUsers();

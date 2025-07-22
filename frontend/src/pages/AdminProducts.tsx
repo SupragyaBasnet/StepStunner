@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useAuth } from '../context/AuthContext';
 
 interface Product {
   id: string;
@@ -41,14 +42,43 @@ const AdminProducts: React.FC = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [addProduct, setAddProduct] = useState<Product>(emptyProduct);
   const [addLoading, setAddLoading] = useState(false);
+  const { user } = useAuth();
 
   const fetchProducts = async () => {
-    setLoading(true);
-    const res = await fetch(`/api/admin/products?search=${encodeURIComponent(search)}&page=${page + 1}&limit=${rowsPerPage}`);
-    const data = await res.json();
-    setProducts(data.products || []);
-    setTotal(data.total || 0);
-    setLoading(false);
+    try {
+      setLoading(true);
+      
+      // Check if user is admin
+      if (!user || user.role !== 'admin') {
+        console.error('Admin access required');
+        return;
+      }
+      
+      const token = localStorage.getItem('stepstunnerToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+      
+      const res = await fetch(`/api/admin/products?search=${encodeURIComponent(search)}&page=${page + 1}&limit=${rowsPerPage}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        console.error('Failed to fetch products:', res.statusText);
+        return;
+      }
+      
+      const data = await res.json();
+      setProducts(data.products || []);
+      setTotal(data.total || 0);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -77,9 +107,13 @@ const AdminProducts: React.FC = () => {
   };
   const handleAddSave = async () => {
     setAddLoading(true);
+    const token = localStorage.getItem('stepstunnerToken');
     await fetch('/api/admin/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(addProduct),
     });
     setAddLoading(false);
@@ -97,9 +131,13 @@ const AdminProducts: React.FC = () => {
   const handleEditSave = async () => {
     if (!editProduct) return;
     setEditLoading(true);
+    const token = localStorage.getItem('stepstunnerToken');
     await fetch(`/api/admin/products/${editProduct.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(editProduct),
     });
     setEditLoading(false);
@@ -113,7 +151,13 @@ const AdminProducts: React.FC = () => {
   const handleDelete = async () => {
     if (!deleteProduct) return;
     setDeleteLoading(true);
-    await fetch(`/api/admin/products/${deleteProduct.id}`, { method: 'DELETE' });
+    const token = localStorage.getItem('stepstunnerToken');
+    await fetch(`/api/admin/products/${deleteProduct.id}`, { 
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     setDeleteLoading(false);
     closeDelete();
     fetchProducts();
@@ -130,7 +174,7 @@ const AdminProducts: React.FC = () => {
           size="small"
           sx={{ width: 300 }}
         />
-        <Button variant="contained" color="primary" onClick={openAdd}>
+        <Button variant="contained" onClick={openAdd} sx={{ backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}>
           Add Product
         </Button>
       </Box>
@@ -157,7 +201,7 @@ const AdminProducts: React.FC = () => {
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>{product.brand || '-'}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>Rs {product.price.toFixed(2)}</TableCell>
                   <TableCell>{new Date(product.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell align="right">
                     <IconButton size="small" color="primary" onClick={() => openEdit(product)}>
@@ -203,7 +247,9 @@ const AdminProducts: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeAdd}>Cancel</Button>
-          <Button onClick={handleAddSave} variant="contained" disabled={addLoading}>{addLoading ? <CircularProgress size={20} /> : 'Add'}</Button>
+          <Button onClick={handleAddSave} variant="contained" disabled={addLoading} sx={{ backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}>
+            {addLoading ? <CircularProgress size={20} /> : 'Add'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -224,7 +270,9 @@ const AdminProducts: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeEdit}>Cancel</Button>
-          <Button onClick={handleEditSave} variant="contained" disabled={editLoading}>{editLoading ? <CircularProgress size={20} /> : 'Save'}</Button>
+          <Button onClick={handleEditSave} variant="contained" disabled={editLoading} sx={{ backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}>
+            {editLoading ? <CircularProgress size={20} /> : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
 

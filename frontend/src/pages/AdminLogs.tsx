@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, TextField, Box
+  Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, TextField, Box, Button, Alert
 } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
 
 interface Log {
-  id: string;
+  _id: string;
   timestamp: string;
-  user: string;
+  userId?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   action: string;
   status: string;
-  details: string;
+  details: any;
+  ipAddress: string;
 }
 
 const AdminLogs: React.FC = () => {
@@ -19,14 +25,45 @@ const AdminLogs: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [creatingSamples, setCreatingSamples] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const fetchLogs = async () => {
-    setLoading(true);
-    const res = await fetch(`/api/admin/logs?search=${encodeURIComponent(search)}&page=${page + 1}&limit=${rowsPerPage}`);
-    const data = await res.json();
-    setLogs(data.logs || []);
-    setTotal(data.total || 0);
-    setLoading(false);
+    try {
+      setLoading(true);
+      
+      // Check if user is admin
+      if (!user || user.role !== 'admin') {
+        console.error('Admin access required');
+        return;
+      }
+      
+      const token = localStorage.getItem('stepstunnerToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+      
+      const res = await fetch(`/api/admin/logs?search=${encodeURIComponent(search)}&page=${page + 1}&limit=${rowsPerPage}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        console.error('Failed to fetch logs:', res.statusText);
+        return;
+      }
+      
+      const data = await res.json();
+      setLogs(data.logs || []);
+      setTotal(data.total || 0);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -47,10 +84,41 @@ const AdminLogs: React.FC = () => {
     // eslint-disable-next-line
   }, [search]);
 
+  const createSampleLogs = async () => {
+    try {
+      setCreatingSamples(true);
+      const token = localStorage.getItem('stepstunnerToken');
+      const res = await fetch('/api/admin/logs/sample', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (res.ok) {
+        setMessage('Sample logs created successfully!');
+        fetchLogs(); // Refresh the logs
+      } else {
+        setMessage('Failed to create sample logs');
+      }
+    } catch (error) {
+      setMessage('Error creating sample logs');
+    } finally {
+      setCreatingSamples(false);
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>Security Logs</Typography>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          variant="outlined" 
+          onClick={createSampleLogs} 
+          disabled={creatingSamples}
+        >
+          {creatingSamples ? 'Creating...' : 'Create Sample Logs'}
+        </Button>
         <TextField
           label="Search logs"
           value={search}
@@ -59,6 +127,12 @@ const AdminLogs: React.FC = () => {
           sx={{ width: 300 }}
         />
       </Box>
+      
+      {message && (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setMessage(null)}>
+          {message}
+        </Alert>
+      )}
       <Paper>
         <TableContainer>
           <Table>
@@ -73,12 +147,12 @@ const AdminLogs: React.FC = () => {
             </TableHead>
             <TableBody>
               {logs.map((log) => (
-                <TableRow key={log.id}>
+                <TableRow key={log._id}>
                   <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                  <TableCell>{log.user}</TableCell>
+                  <TableCell>{log.userId?.name || 'N/A'}</TableCell>
                   <TableCell>{log.action}</TableCell>
                   <TableCell>{log.status}</TableCell>
-                  <TableCell>{log.details}</TableCell>
+                  <TableCell>{JSON.stringify(log.details)}</TableCell>
                 </TableRow>
               ))}
               {logs.length === 0 && !loading && (
