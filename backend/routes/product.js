@@ -9,15 +9,19 @@ const jwt = require('jsonwebtoken'); // Added missing import for jwt
 
 router.get('/', productController.getAllProducts);
 
-// Get trending products (top 6 by rating and reviews) - MUST be before /:id route
+// Get trending products
 router.get('/trending', async (req, res) => {
   try {
+    // Get products with highest ratings or most recent
     const trendingProducts = await Product.find()
-      .sort({ rating: -1, reviews: -1 })
-      .limit(6);
+      .sort({ rating: -1, createdAt: -1 })
+      .limit(6)
+      .select('name price image description category rating');
+    
     res.json(trendingProducts);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching trending products:', error);
+    res.status(500).json({ message: 'Failed to fetch trending products' });
   }
 });
 
