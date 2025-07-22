@@ -10,20 +10,9 @@ const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || 'YOUR_RECAPTCHA
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, phone, password, recaptchaToken } = req.body;
+    const { name, email, phone, password } = req.body;
     const ipAddress = req.ip;
     const userAgent = req.get('User-Agent');
-
-    // Verify reCAPTCHA
-    if (!recaptchaToken) {
-      return res.status(400).json({ message: 'CAPTCHA verification failed' });
-    }
-    
-    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
-    const captchaRes = await axios.post(verifyUrl);
-    if (!captchaRes.data.success) {
-      return res.status(400).json({ message: 'CAPTCHA verification failed' });
-    }
 
     // Log registration attempt
     await ActivityLog.logActivity({
@@ -185,15 +174,15 @@ exports.login = async (req, res) => {
     const ipAddress = req.ip;
     const userAgent = req.get('User-Agent');
     
-    // Temporarily disable reCAPTCHA verification for testing
-    // if (!recaptchaToken) {
-    //   return res.status(400).json({ message: 'CAPTCHA verification failed' });
-    // }
-    // const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
-    // const captchaRes = await axios.post(verifyUrl);
-    // if (!captchaRes.data.success) {
-    //   return res.status(400).json({ message: 'CAPTCHA verification failed' });
-    // }
+    // Enable reCAPTCHA verification
+    if (!recaptchaToken) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+    }
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+    const captchaRes = await axios.post(verifyUrl);
+    if (!captchaRes.data.success) {
+      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+    }
 
     // Log login attempt
     await ActivityLog.logActivity({
@@ -437,19 +426,23 @@ exports.verifyOtp = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-  const user = await User.findOne({ email });
-  if (!user || !user.otp || !user.otpExpiry) {
-    return res.status(400).json({ message: "Invalid or expired OTP." });
+  try {
+    const { email, otp, password, newPassword } = req.body;
+    const user = await User.findOne({ email });
+    if (!user || !user.otp || !user.otpExpiry) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+    if (user.otp !== otp || user.otpExpiry < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+    user.password = password || newPassword;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+    return res.json({ message: "Password reset successful." });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
   }
-  if (user.otp !== otp || user.otpExpiry < new Date()) {
-    return res.status(400).json({ message: "Invalid or expired OTP." });
-  }
-  user.password = newPassword;
-  user.otp = undefined;
-  user.otpExpiry = undefined;
-  await user.save();
-  res.json({ message: "Password reset successful." });
 };
 
 exports.updateProfile = async (req, res) => {
