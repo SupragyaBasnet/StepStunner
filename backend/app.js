@@ -1,65 +1,112 @@
 const express = require('express');
-const app = express();
-require('dotenv').config();
-const path = require('path');
-const session = require('express-session');
-
-// Import security middleware
-const {
-  securityHeaders,
-  generalLimiter,
-  authLimiter,
-  sanitizeInput,
-  activityLogger,
-  sessionConfig
-} = require('./middleware/security');
-
+const mongoose = require('mongoose');
 const cors = require('cors');
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+require('dotenv').config();
+
+const app = express();
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60, // 1 day
+    autoRemove: 'native'
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  },
+  name: 'sessionId' // Change default session name
 }));
 
-// Apply security headers
-app.use(securityHeaders);
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.google.com", "https://www.gstatic.com"],
+      connectSrc: ["'self'", "https://www.google.com"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
 
-// Apply session management
-app.use(session(sessionConfig));
-
-// Apply activity logging
-app.use(activityLogger);
-
-// Apply input sanitization
-app.use(sanitizeInput);
-
-app.use(express.json({ limit: '5mb' }));
-
-// Serve static images from frontend assets
-app.use('/heels', express.static(path.join(__dirname, '../frontend/src/assets/heels')));
-app.use('/flats', express.static(path.join(__dirname, '../frontend/src/assets/flats')));
-app.use('/sneakers', express.static(path.join(__dirname, '../frontend/src/assets/sneakers')));
-app.use('/products', express.static(path.join(__dirname, '../frontend/src/assets/products')));
-app.use('/assets', express.static(path.join(__dirname, '../frontend/src/assets')));
-
-// Health check route
-app.get('/', (req, res) => {
-  console.log("server is running");
-  res.send('StepStunner backend is running!');
+// Input sanitization middleware
+app.use((req, res, next) => {
+  // Sanitize request body
+  if (req.body) {
+    const sanitize = (obj) => {
+      for (let key in obj) {
+        if (typeof obj[key] === 'string') {
+          // Remove potential XSS vectors
+          obj[key] = obj[key]
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/javascript:/gi, '')
+            .replace(/on\w+\s*=/gi, '')
+            .trim();
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          sanitize(obj[key]);
+        }
+      }
+    };
+    sanitize(req.body);
+  }
+  next();
 });
 
-const authRoutes = require('./routes/auth');
-// Apply auth-specific rate limiting to auth routes
-app.use('/api/auth', authLimiter, authRoutes);
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+}));
 
-const productRoutes = require('./routes/product');
-// Apply general rate limiting to product routes
-app.use('/api/products', generalLimiter, productRoutes);
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
-const securityRoutes = require('./routes/security');
-app.use('/api/security', securityRoutes);
+// CSRF protection
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  }
+});
 
-const adminRoutes = require('./routes/admin');
-// Admin routes without rate limiting to prevent dashboard issues
-app.use('/api/admin', adminRoutes);
+// Apply CSRF protection to all routes except GET requests
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
 
-module.exports = app;
+// CSRF token endpoint
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});

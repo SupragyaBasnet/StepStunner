@@ -170,18 +170,28 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password, mfaToken, recaptchaToken } = req.body;
+    const { email, password, recaptchaToken } = req.body;
     const ipAddress = req.ip;
     const userAgent = req.get('User-Agent');
-    
-    // Enable reCAPTCHA verification
+
+    // Verify reCAPTCHA
     if (!recaptchaToken) {
-      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+      return res.status(400).json({ message: "Please complete the reCAPTCHA" });
     }
-    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
-    const captchaRes = await axios.post(verifyUrl);
-    if (!captchaRes.data.success) {
-      return res.status(400).json({ message: 'CAPTCHA verification failed' });
+
+    const recaptchaResponse = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
+    );
+
+    if (!recaptchaResponse.data.success) {
+      await ActivityLog.logActivity({
+        action: 'login',
+        details: { email, reason: 'recaptcha_failed' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({ message: "reCAPTCHA verification failed" });
     }
 
     // Log login attempt
@@ -202,147 +212,104 @@ exports.login = async (req, res) => {
         userAgent,
         status: 'failure'
       });
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Check if account is locked
-    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+    if (user.isAccountLocked()) {
       await ActivityLog.logActivity({
+        userId: user._id,
         action: 'login',
-        details: { email, reason: 'account_locked' },
+        details: { reason: 'account_locked' },
         ipAddress,
         userAgent,
         status: 'failure'
       });
       return res.status(423).json({ 
-        message: "Account is temporarily locked. Please try again later.",
-        lockedUntil: user.accountLockedUntil
+        message: "Account is temporarily locked due to multiple failed login attempts. Please try again later." 
       });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      // Increment failed attempts
-      await user.incrementFailedAttempts();
-      
-      await ActivityLog.logActivity({
-        action: 'login',
-        details: { email, reason: 'invalid_password', failedAttempts: user.failedLoginAttempts },
-        ipAddress,
-        userAgent,
-        status: 'failure'
-      });
-
-      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     // Check if password has expired
     if (user.isPasswordExpired()) {
       await ActivityLog.logActivity({
-        action: 'security_event',
-        details: { email, reason: 'password_expired' },
+        userId: user._id,
+        action: 'login',
+        details: { reason: 'password_expired' },
         ipAddress,
         userAgent,
-        status: 'warning'
+        status: 'failure'
       });
       return res.status(401).json({ 
-        message: "Password has expired. Please reset your password.",
+        message: "Your password has expired. Please reset your password.",
         requiresPasswordReset: true
       });
     }
 
-    // Check MFA if enabled
-    if (user.mfaEnabled && user.mfaVerified) {
-      if (!mfaToken) {
-        await ActivityLog.logActivity({
-          action: 'login',
-          details: { email, reason: 'mfa_token_required' },
-          ipAddress,
-          userAgent,
-          status: 'failure'
-        });
-        return res.status(401).json({ 
-          message: "MFA token required",
-          requiresMFA: true,
-          mfaMethod: user.mfaMethod
-        });
-      }
-
-      // Verify MFA token
-      let mfaValid = false;
-      if (user.mfaMethod === 'totp') {
-        mfaValid = speakeasy.totp.verify({
-          secret: user.mfaSecret,
-          encoding: 'base32',
-          token: mfaToken,
-          window: 2 // Allow 2 time steps for clock skew
-        });
-      } else if (user.mfaMethod === 'sms' || user.mfaMethod === 'email') {
-        // For SMS/Email, check against stored OTP
-        mfaValid = user.otp === mfaToken && user.otpExpiry > new Date();
-      }
-
-      if (!mfaValid) {
-        await ActivityLog.logActivity({
-          action: 'login',
-          details: { email, reason: 'invalid_mfa_token' },
-          ipAddress,
-          userAgent,
-          status: 'failure'
-        });
-        return res.status(401).json({ message: "Invalid MFA token" });
-      }
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      // Increment failed login attempts
+      await user.incrementFailedAttempts();
+      
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'login',
+        details: { 
+          reason: 'invalid_password',
+          failedAttempts: user.failedLoginAttempts 
+        },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Reset failed attempts on successful login
+    // Reset failed login attempts on successful login
     await user.resetFailedAttempts();
-    user.lastLoginAt = new Date();
-    user.lastLoginIp = ipAddress;
-    await user.save();
-
-    // Generate JWT with additional security claims
-    const token = jwt.sign(
-      { 
-        id: user._id, 
-        role: user.role,
-        passwordChangedAt: user.passwordChangedAt.getTime(),
-        mfaEnabled: user.mfaEnabled,
-        iat: Math.floor(Date.now() / 1000)
-      },
-      process.env.JWT_SECRET,
-      { 
-        expiresIn: "7d",
-        issuer: 'stepstunner',
-        audience: 'stepstunner-users'
-      }
-    );
 
     // Log successful login
     await ActivityLog.logActivity({
       userId: user._id,
       action: 'login',
-      details: { mfaUsed: user.mfaEnabled },
+      details: { loginMethod: 'password' },
       ipAddress,
       userAgent,
       status: 'success'
     });
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: user.email,
+        role: user.role,
+        passwordChangedAt: user.passwordChangedAt
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Set session data
+    req.session.userId = user._id;
+    req.session.userRole = user.role;
+
     res.json({
+      message: "Login successful",
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage,
         mfaEnabled: user.mfaEnabled,
         mfaMethod: user.mfaMethod
-      },
+      }
     });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -585,6 +552,15 @@ exports.changePassword = async (req, res) => {
     // Update password with history
     await user.updatePassword(newPassword);
 
+    // Invalidate all existing sessions for this user
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+        }
+      });
+    }
+
     // Log successful password change
     await ActivityLog.logActivity({
       userId: user._id,
@@ -612,9 +588,9 @@ exports.changePassword = async (req, res) => {
     );
 
     res.json({ 
-      message: "Password changed successfully", 
+      message: "Password changed successfully. Please log in again with your new password.",
       token,
-      passwordExpiresAt: user.passwordExpiresAt
+      requiresReauth: true
     });
   } catch (err) {
     console.error('Change password error:', err);
