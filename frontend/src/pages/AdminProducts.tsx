@@ -5,6 +5,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../context/AuthContext';
+import { getImagePath, getFallbackImage } from '../utils/imageUtils';
 
 interface Product {
   id: string;
@@ -196,7 +197,10 @@ const AdminProducts: React.FC = () => {
               {products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
-                    {product.image ? <Avatar src={product.image} alt={product.name} /> : <Avatar>{product.name[0]}</Avatar>}
+                    {product.image ? <Avatar src={getImagePath(product.image)} alt={product.name} onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = getFallbackImage();
+                    }} /> : <Avatar>{product.name[0]}</Avatar>}
                   </TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>

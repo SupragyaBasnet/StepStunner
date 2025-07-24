@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useCart } from '../context/CartContext';
+import { getImagePath, getFallbackImage } from '../utils/imageUtils';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const Cart: React.FC = () => {
@@ -181,8 +182,12 @@ const Cart: React.FC = () => {
                         <CardMedia
                           component="img"
                           height="70"
-                          image={displayImage}
+                          image={getImagePath(displayImage)}
                           alt={displayName}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = getFallbackImage();
+                          }}
                           sx={{ 
                             objectFit: 'contain',
                             borderRadius: 1,

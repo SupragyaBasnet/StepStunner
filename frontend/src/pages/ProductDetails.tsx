@@ -16,6 +16,7 @@ import React, { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { Product } from "../data/products";
+import { getImagePath, getFallbackImage } from "../utils/imageUtils";
 
 function getProductStory(product: Product) {
   const uniqueDescriptions: Record<number, string> = {
@@ -317,8 +318,12 @@ const ProductDetails: React.FC = () => {
           >
             <Box
               component="img"
-              src={product.image}
+              src={getImagePath(product.image)}
               alt={product.name || ""}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = getFallbackImage();
+              }}
               sx={{
                 width: "100%",
                 maxWidth: 450,
@@ -618,8 +623,12 @@ const ProductDetails: React.FC = () => {
                 >
                   <Box
                     component="img"
-                    src={rel.image}
+                    src={getImagePath(rel.image)}
                     alt={rel.name}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = getFallbackImage();
+                    }}
                     sx={{
                       width: 80,
                       height: 80,

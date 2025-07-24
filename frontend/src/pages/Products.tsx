@@ -10,6 +10,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useCart } from '../context/CartContext';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
+import { getImagePath, getFallbackImage } from '../utils/imageUtils';
 
 const allCategories = [
   { label: 'Sneakers', value: 'sneakers' },
@@ -641,8 +642,12 @@ const Products: React.FC = () => {
                         }}>
                           <CardMedia
                             component="img"
-                            image={product.image}
+                            image={getImagePath(product.image)}
                             alt={product.name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = getFallbackImage();
+                            }}
                             sx={{ 
                               width: '100%',
                               height: 180, 

@@ -3,6 +3,7 @@ import { Box, Button, Card, CardContent, CardMedia, Container, Grid, Typography,
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import heroImage from '../assets/hero1.jpg';
 import { products } from '../data/products';
+import { getImagePath, getFallbackImage } from '../utils/imageUtils';
 
 // Import images with fallbacks
 import sneakersImg from '../assets/Nike_Panda_Dunks_Shoe.png';
@@ -166,8 +167,12 @@ const Home: React.FC = () => {
                 >
                   <CardMedia
                     component="img"
-                    image={product.image}
+                    image={getImagePath(product.image)}
                     alt={product.name}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = getFallbackImage();
+                    }}
                     sx={{ 
                       height: 200, 
                       objectFit: 'contain', 
