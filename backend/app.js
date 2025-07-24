@@ -98,15 +98,52 @@ const csrfProtection = csrf({
   }
 });
 
-// Apply CSRF protection to all routes except GET requests
-app.use((req, res, next) => {
-  if (req.method === 'GET') {
-    return next();
-  }
-  csrfProtection(req, res, next);
-});
+// Apply CSRF protection only in production or when explicitly enabled
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.method === 'GET') {
+      return next();
+    }
+    csrfProtection(req, res, next);
+  });
+} else {
+  // In development, skip CSRF protection but log for awareness
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') {
+      console.log('CSRF protection disabled in development mode');
+    }
+    next();
+  });
+}
 
 // CSRF token endpoint
 app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/product');
+const cartRoutes = require('./routes/cartRoutes');
+const adminRoutes = require('./routes/admin');
+const securityRoutes = require('./routes/security');
+
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/security', securityRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+module.exports = app;
