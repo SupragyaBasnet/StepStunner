@@ -2,6 +2,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Alert, Box, Button, IconButton, Paper, Snackbar, TextField, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ProfileSettings: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -12,6 +13,7 @@ const ProfileSettings: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const currentPasswordRef = useRef<HTMLInputElement>(null);
 
@@ -60,16 +62,13 @@ const ProfileSettings: React.FC = () => {
         setSnackbar({ open: true, message: data.message || 'Failed to change password.', severity: 'error' });
         return;
       }
-      // If a new token is returned, update localStorage
-      if (data.token) {
-                  localStorage.setItem('stepstunnerToken', data.token);
-      }
-      setSnackbar({ open: true, message: 'Password changed successfully!', severity: 'success' });
+      setSnackbar({ open: true, message: 'Password changed successfully! Please log in with your new password.', severity: 'success' });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      // Optionally, you may want to refresh user context or force re-login
-      setTimeout(() => { navigate('/login'); }, 1500);
+      // Clear authentication state and redirect to login
+      logout();
+      navigate('/login');
     } catch (err) {
       setSnackbar({ open: true, message: 'Failed to change password.', severity: 'error' });
     }

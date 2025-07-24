@@ -146,6 +146,7 @@ const ProfileMFASetup: React.FC = () => {
 
       setSuccess('MFA disabled successfully!');
       setDisablePassword('');
+      setSetupStep(0); // Close the dialog
       fetchMFAStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disable MFA');
@@ -176,7 +177,7 @@ const ProfileMFASetup: React.FC = () => {
     }
   };
 
-  if (setupStep > 0) {
+  if (setupStep > 0 && setupStep < 3) {
     return (
       
       <Container maxWidth="md">
@@ -344,28 +345,46 @@ const ProfileMFASetup: React.FC = () => {
         )}
         <Box sx={{ width: '100%', maxWidth: 500, mx: 'auto' }}>
           {mfaStatus?.enabled ? (
-            <Card sx={{ mb: 3, borderRadius: 4, boxShadow: 2 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
-                  <Typography variant="h6" fontWeight={700}>MFA is Enabled</Typography>
-                </Box>
+            <>
+              <Card sx={{ mb: 3, borderRadius: 4, boxShadow: 2 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
+                    <Typography variant="h6" fontWeight={700}>MFA is Enabled</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Your account is protected with {getMethodDescription(mfaStatus.method).toLowerCase()}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    {getMethodIcon(mfaStatus.method)}
+                    <Typography variant="body2" sx={{ ml: 1, fontWeight: 500 }}>
+                      {getMethodDescription(mfaStatus.method)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                    Verification codes are sent to your registered email address.
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => setSetupStep(3)}
+                    startIcon={<Cancel />}
+                    sx={{ fontWeight: 600, borderRadius: 3 }}
+                  >
+                    Disable MFA
+                  </Button>
+                </CardActions>
+              </Card>
+              
+              <Box sx={{ mt: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Your account is protected with {getMethodDescription(mfaStatus.method).toLowerCase()}
+                  Your account is now protected with two-factor authentication. 
+                  You'll receive verification codes via email when logging in.
                 </Typography>
-              </CardContent>
-              <CardActions>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => setSetupStep(3)}
-                  startIcon={<Cancel />}
-                  sx={{ fontWeight: 600, borderRadius: 3 }}
-                >
-                  Disable MFA
-                </Button>
-              </CardActions>
-            </Card>
+              </Box>
+            </>
           ) : (
             <Card sx={{ mb: 3, borderRadius: 4, boxShadow: 2 }}>
               <CardContent>

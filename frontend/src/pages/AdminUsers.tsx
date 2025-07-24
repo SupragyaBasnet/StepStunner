@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, TextField, IconButton, Button, Box, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel, CircularProgress, DialogContentText
+  Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, TextField, IconButton, Button, Box, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel, CircularProgress, DialogContentText, Avatar
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -15,6 +15,7 @@ interface User {
   isActive: boolean;
   mfaEnabled: boolean;
   createdAt: string;
+  profileImage?: string;
 }
 
 const AdminUsers: React.FC = () => {
@@ -88,9 +89,9 @@ const AdminUsers: React.FC = () => {
   // Edit user handlers
   const openEdit = (user: User) => setEditUser(user);
   const closeEdit = () => setEditUser(null);
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement> | { target: { name?: string; value: unknown; type?: string } }) => {
     if (!editUser) return;
-    const { name, value, type } = e.target as HTMLInputElement;
+    const { name, value, type } = e.target;
     setEditUser({
       ...editUser,
       [name!]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
@@ -151,6 +152,7 @@ const AdminUsers: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Profile</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
@@ -164,6 +166,14 @@ const AdminUsers: React.FC = () => {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
+                  <TableCell>
+                    <Avatar 
+                      src={user.profileImage || undefined}
+                      sx={{ width: 40, height: 40 }}
+                    >
+                      {!user.profileImage && user.name?.charAt(0)}
+                    </Avatar>
+                  </TableCell>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phone}</TableCell>
@@ -183,7 +193,7 @@ const AdminUsers: React.FC = () => {
               ))}
               {users.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">No users found.</TableCell>
+                  <TableCell colSpan={9} align="center">No users found.</TableCell>
                 </TableRow>
               )}
             </TableBody>

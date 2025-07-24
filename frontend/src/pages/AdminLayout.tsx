@@ -27,6 +27,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
@@ -46,6 +47,7 @@ const navItems = [
   { text: 'Products', icon: <InventoryIcon />, path: '/admin/products' },
   { text: 'Orders', icon: <ShoppingCartIcon />, path: '/admin/orders' },
   { text: 'Logs', icon: <ListAltIcon />, path: '/admin/logs' },
+  { text: 'Settings', icon: <SettingsIcon />, path: '/admin/settings' },
 ];
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -135,8 +137,10 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 width: 45,
                 height: 45,
                 border: '2px solid rgba(255,255,255,0.3)'
-              }}>
-                <PersonIcon />
+              }}
+              src={user?.profileImage || undefined}
+              >
+                {!user?.profileImage && <PersonIcon />}
               </Avatar>
               <Box sx={{ textAlign: 'left' }}>
                 <Typography variant="subtitle1" sx={{ 

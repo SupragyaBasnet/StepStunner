@@ -39,6 +39,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminProducts from './pages/AdminProducts';
 import AdminOrders from './pages/AdminOrders';
 import AdminLogs from './pages/AdminLogs';
+import AdminSettings from './pages/AdminSettings';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 const theme = createTheme({
@@ -131,6 +132,7 @@ const AppContent: React.FC = () => {
                     <Route path="products" element={<AdminProducts />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="logs" element={<AdminLogs />} />
+                    <Route path="settings" element={<AdminSettings />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>

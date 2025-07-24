@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ProfileOverview: React.FC = () => {
-  const { user, setUser } = useAuth() as any;
+  const { user, setUser, logout } = useAuth() as any;
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -53,16 +53,11 @@ const ProfileOverview: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to update profile');
-      setUser && setUser((prev: any) => ({ ...prev, name: data.name, email: data.email, phone: data.phone }));
-      // Update localStorage for login consistency
-              const userData = JSON.parse(localStorage.getItem('stepstunnerUser') || '{}');
-        localStorage.setItem('stepstunnerUser', JSON.stringify({ ...userData, name: data.name, email: data.email, phone: data.phone }));
-      // If a new token is returned (e.g., after email change), update it
-      if (data.token) {
-                  localStorage.setItem('stepstunnerToken', data.token);
-      }
-      setSnackbar({ open: true, message: 'Profile updated!', severity: 'success' });
+      setSnackbar({ open: true, message: 'Profile updated! Please log in again.', severity: 'success' });
       setEditMode(false);
+      // Clear authentication state and redirect to login
+      logout();
+      navigate('/login');
     } catch (err: any) {
       setSnackbar({ open: true, message: err.message || 'Failed to update profile', severity: 'error' });
     }

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Confetti from 'react-confetti';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { getImagePath, getFallbackImage } from '../utils/imageUtils';
 
 // Import the new CustomizedProductImage component
 
@@ -500,8 +501,12 @@ const CheckoutPage: React.FC = () => {
                     justifyContent: 'center'
                   }}>
                     <img 
-                      src={item.image} 
+                      src={getImagePath(item.image)} 
                       alt={item.name} 
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = getFallbackImage();
+                      }}
                       style={{ 
                         width: '100%', 
                         height: '100%', 
