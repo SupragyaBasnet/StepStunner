@@ -315,7 +315,7 @@ exports.login = async (req, res) => {
 
 exports.profile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password -passwordHistory -mfaSecret -mfaBackupCodes");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       _id: user._id,
@@ -324,6 +324,9 @@ exports.profile = async (req, res) => {
       phone: user.phone,
       profileImage: user.profileImage || null,
       role: user.role || 'user',
+      mfaEnabled: user.mfaEnabled || false,
+      mfaVerified: user.mfaVerified || false,
+      mfaMethod: user.mfaMethod || 'totp',
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -619,7 +622,7 @@ exports.removeProfileImage = async (req, res) => {
     const userId = req.user.id;
     const user = await User.findByIdAndUpdate(
       userId,
-      { profileImage: "" },
+      { profileImage: null },
       { new: true }
     );
     if (!user) return res.status(404).json({ message: "User not found" });

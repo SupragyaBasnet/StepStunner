@@ -118,7 +118,8 @@ const securityHeaders = helmet({
 
 // Password strength validation middleware
 const validatePasswordStrength = (req, res, next) => {
-  const { password } = req.body;
+  // For change password endpoint, check newPassword instead of password
+  const password = req.body.newPassword || req.body.password;
   
   if (!password) {
     return res.status(400).json({ message: 'Password is required' });

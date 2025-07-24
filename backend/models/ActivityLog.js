@@ -13,7 +13,8 @@ const activityLogSchema = new mongoose.Schema({
       'login', 'logout', 'register', 'password_change', 'password_reset',
       'profile_update', 'order_create', 'order_view', 'cart_update',
       'payment_attempt', 'payment_success', 'payment_failure',
-      'admin_action', 'security_event', 'api_access'
+      'admin_action', 'security_event', 'api_access',
+      'mfa_enabled', 'mfa_disabled', 'mfa_verification', 'mfa_setup'
     ]
   },
   details: { 
