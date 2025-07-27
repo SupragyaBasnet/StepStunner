@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, TextField, IconButton, Button, Box, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, CircularProgress
+  Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, TextField, IconButton, Button, Box, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, CircularProgress, SelectChangeEvent
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -17,6 +17,8 @@ interface Order {
   total: number;
   status: string;
   createdAt: string;
+  address: string;
+  paymentMethod: string;
   rating?: number;
   review?: string;
   items?: { name: string; qty: number; price: number }[];
@@ -99,8 +101,8 @@ const AdminOrders: React.FC = () => {
     setViewStatus(order.status);
   };
   const closeView = () => setViewOrder(null);
-  const handleStatusChange = (e: React.ChangeEvent<{ value: unknown }>) => {
-    setViewStatus(e.target.value as string);
+  const handleStatusChange = (e: SelectChangeEvent<string>) => {
+    setViewStatus(e.target.value);
   };
   const handleStatusSave = async () => {
     if (!viewOrder) return;
@@ -159,6 +161,7 @@ const AdminOrders: React.FC = () => {
               <TableRow>
                 <TableCell>Order ID</TableCell>
                 <TableCell>User</TableCell>
+                <TableCell>Address</TableCell>
                 <TableCell>Total</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Created</TableCell>
@@ -170,6 +173,7 @@ const AdminOrders: React.FC = () => {
                 <TableRow key={order._id}>
                   <TableCell>{order._id}</TableCell>
                   <TableCell>{order.user.name}</TableCell>
+                  <TableCell>{order.address || 'No address'}</TableCell>
                   <TableCell>Rs {order.total.toFixed(2)}</TableCell>
                   <TableCell>{order.status}</TableCell>
                   <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
@@ -185,7 +189,7 @@ const AdminOrders: React.FC = () => {
               ))}
               {orders.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">No orders found.</TableCell>
+                  <TableCell colSpan={7} align="center">No orders found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -210,6 +214,8 @@ const AdminOrders: React.FC = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Typography><b>Order ID:</b> {viewOrder._id}</Typography>
               <Typography><b>User:</b> {viewOrder.user.name}</Typography>
+              <Typography><b>Address:</b> {viewOrder.address || 'No address provided'}</Typography>
+              <Typography><b>Payment Method:</b> {viewOrder.paymentMethod || 'Not specified'}</Typography>
               <Typography><b>Total:</b> Rs {viewOrder.total.toFixed(2)}</Typography>
               <Typography><b>Status:</b></Typography>
               <Select value={viewStatus} onChange={handleStatusChange} fullWidth>

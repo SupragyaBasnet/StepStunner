@@ -1,13 +1,13 @@
 import {
   Cancel, CheckCircle, Email,
   Key, Security, Smartphone, Visibility,
-  VisibilityOff
+  VisibilityOff, Download, Refresh
 } from '@mui/icons-material';
 import {
   Alert, Box, Button, Card, CardActions, CardContent, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid,
   IconButton,
   InputAdornment, Paper, Step,
-  StepLabel, Stepper, TextField, Typography
+  StepLabel, Stepper, TextField, Typography, Tooltip
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -85,6 +85,11 @@ const ProfileMFASetup: React.FC = () => {
         setSecret(data.secret);
         setBackupCodes(data.backupCodes);
         setSetupStep(2);
+        
+        // Auto-enable MFA after QR code is generated
+        setTimeout(() => {
+          handleAutoEnableMFA(data.secret, data.backupCodes);
+        }, 2000); // Give user 2 seconds to scan
       } else {
         setSuccess(data.message);
         setSetupStep(2);
@@ -97,19 +102,53 @@ const ProfileMFASetup: React.FC = () => {
     }
   };
 
+  const handleAutoEnableMFA = async (secret: string, backupCodes: string[]) => {
+    try {
+      const token = localStorage.getItem('stepstunnerToken');
+      const response = await fetch('/api/auth/mfa/auto-enable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          secret: secret, 
+          backupCodes: backupCodes 
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setSuccess('MFA enabled successfully! QR code scanned and verified.');
+        setSetupStep(0);
+        fetchMFAStatus();
+      }
+    } catch (err) {
+      console.log('Auto-enable failed, user will need to verify manually');
+    }
+  };
+
   const handleVerifyMFA = async () => {
     try {
       setLoading(true);
       setError('');
 
       const token = localStorage.getItem('stepstunnerToken');
+      const requestBody = selectedMethod === 'totp' 
+        ? { 
+            token: verificationToken, 
+            secret: secret, 
+            backupCodes: backupCodes 
+          }
+        : { token: verificationToken };
+
       const response = await fetch('/api/auth/mfa/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ token: verificationToken })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
@@ -220,7 +259,42 @@ const ProfileMFASetup: React.FC = () => {
               </Typography>
               
               <Box sx={{ textAlign: 'center', mb: 3 }}>
-                <img src={qrCode} alt="QR Code" style={{ maxWidth: 200 }} />
+                <Paper elevation={3} sx={{ p: 2, display: 'inline-block', borderRadius: 2 }}>
+                  <img 
+                    src={qrCode} 
+                    alt="QR Code" 
+                    style={{ 
+                      maxWidth: 200, 
+                      borderRadius: 8,
+                      border: '2px solid #f0f0f0'
+                    }} 
+                  />
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    <Tooltip title="Download QR Code">
+                      <IconButton 
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = qrCode;
+                          link.download = 'stepstunner-mfa-qr.png';
+                          link.click();
+                        }}
+                        size="small"
+                        color="primary"
+                      >
+                        <Download />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Refresh QR Code">
+                      <IconButton 
+                        onClick={() => handleSetupMFA('totp')}
+                        size="small"
+                        color="secondary"
+                      >
+                        <Refresh />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Paper>
               </Box>
 
               <Typography variant="h6" gutterBottom>
@@ -289,41 +363,79 @@ const ProfileMFASetup: React.FC = () => {
 
           {setupStep === 2 && (
             <Box>
-              <Typography variant="h6" gutterBottom>
-                Verify Your Setup
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 3 }}>
-                Enter the verification code from your {selectedMethod === 'totp' ? 'authenticator app' : selectedMethod}:
-              </Typography>
+              {selectedMethod === 'totp' && qrCode && (
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Scan QR Code with Your Phone
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                    Open your authenticator app (Google Authenticator, Authy, etc.) and scan this QR code
+                  </Typography>
+                  <Paper elevation={3} sx={{ p: 2, display: 'inline-block', borderRadius: 2 }}>
+                    <img 
+                      src={qrCode} 
+                      alt="QR Code" 
+                      style={{ 
+                        maxWidth: 250, 
+                        borderRadius: 8,
+                        border: '2px solid #f0f0f0'
+                      }} 
+                    />
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                      <Tooltip title="Download QR Code">
+                        <IconButton 
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = qrCode;
+                            link.download = 'stepstunner-mfa-qr.png';
+                            link.click();
+                          }}
+                          size="small"
+                          color="primary"
+                        >
+                          <Download />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Refresh QR Code">
+                        <IconButton 
+                          onClick={() => handleSetupMFA('totp')}
+                          size="small"
+                          color="secondary"
+                        >
+                          <Refresh />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Paper>
+                  
+                  <Box sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
+                      MFA will be automatically enabled once you scan the QR code
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      If you need to verify manually, enter the code from your app below
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
               
-              <TextField
-                fullWidth
-                label="Verification Code"
-                value={verificationToken}
-                onChange={(e) => setVerificationToken(e.target.value)}
-                placeholder="Enter 6-digit code"
-                inputProps={{ maxLength: 6 }}
-                sx={{ mb: 3 }}
-              />
 
-              <Button
-                variant="contained"
-                onClick={handleVerifyMFA}
-                disabled={loading || !verificationToken}
-                sx={{ mr: 2, backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}
-              >
-                {loading ? 'Verifying...' : 'Verify & Enable MFA'}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setSetupStep(0);
-                  setVerificationToken('');
-                }}
-                sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
-              >
-                Cancel
-              </Button>
+              
+              <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  MFA will be automatically enabled in a few seconds...
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setSetupStep(0);
+                    setVerificationToken('');
+                  }}
+                  sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
+                >
+                  Cancel
+                </Button>
+              </Box>
             </Box>
           )}
         </Paper>
@@ -400,29 +512,67 @@ const ProfileMFASetup: React.FC = () => {
           )}
           {!mfaStatus?.enabled && (
             <Grid container spacing={3} justifyContent="center" alignItems="stretch" sx={{ mt: 1 }}>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6}>
                 <Card sx={{ 
                   borderRadius: 4, 
                   boxShadow: 2, 
                   display: 'flex', 
                   flexDirection: 'column', 
                   justifyContent: 'space-between',
-                  minWidth: 270,
-                  maxWidth: 500,
-                  width: '100%',
+                  height: '100%',
                   px: 3,
-                  py: 2,
-                  m: 'auto'
+                  py: 2
+                }}>
+                  <CardContent sx={{ p: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Key sx={{ color: '#d72660', fontSize: 32, mr: 2, flexShrink: 0 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        QR Code Authentication
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                      Scan QR code with your authenticator app to enable two-factor authentication.
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => handleSetupMFA('totp')}
+                      sx={{ 
+                        backgroundColor: '#d72660', 
+                        color: 'white', 
+                        '&:hover': { backgroundColor: '#b71c4a' },
+                        borderRadius: 2,
+                        py: 1.5,
+                        fontWeight: 600
+                      }}
+                    >
+                      SCAN QR CODE
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Card sx={{ 
+                  borderRadius: 4, 
+                  boxShadow: 2, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between',
+                  height: '100%',
+                  px: 3,
+                  py: 2
                 }}>
                   <CardContent sx={{ p: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <Email sx={{ color: '#d72660', fontSize: 32, mr: 2, flexShrink: 0 }} />
                       <Typography variant="h6" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        Email
+                        Email Verification
                       </Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                      Receive verification codes via email.
+                      Receive verification codes via email to your registered email address.
                     </Typography>
                   </CardContent>
                   <CardActions sx={{ p: 0, pt: 0, pb: 1 }}>
