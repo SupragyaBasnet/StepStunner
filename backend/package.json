@@ -25,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.6.3",
     "nodemailer": "^7.0.4",
+    "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0"
   },
   "devDependencies": {

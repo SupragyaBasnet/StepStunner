@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const speakeasy = require("speakeasy"); // For TOTP generation
+const qr = require("qrcode"); // For QR code generation
 const axios = require('axios'); // Add at the top
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || 'YOUR_RECAPTCHA_SECRET_KEY'; // Add at the top
 // Optional: for auto-login after register
@@ -303,6 +304,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        profileImage: user.profileImage,
         mfaEnabled: user.mfaEnabled,
         mfaMethod: user.mfaMethod
       }
@@ -842,34 +844,40 @@ exports.setupMFA = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (mfaMethod === 'totp') {
-      // Generate TOTP secret
+      // Generate TOTP secret with enhanced QR code
       const secret = speakeasy.generateSecret({
         name: `StepStunner (${user.email})`,
-        issuer: 'StepStunner'
+        issuer: 'StepStunner',
+        length: 32,
+        encoding: 'base32'
       });
 
-      user.mfaSecret = secret.base32;
-      user.mfaMethod = 'totp';
+      // Don't save to user yet - wait for verification
+      // user.mfaSecret = secret.base32;
+      // user.mfaMethod = 'totp';
       
       // Generate backup codes
       const backupCodes = [];
       for (let i = 0; i < 10; i++) {
         backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
       }
-      user.mfaBackupCodes = backupCodes;
+      // user.mfaBackupCodes = backupCodes;
 
       await ActivityLog.logActivity({
         userId: user._id,
-        action: 'mfa_setup',
+        action: 'mfa_setup_initiated',
         details: { method: 'totp' },
         ipAddress,
         userAgent,
-        status: 'success'
+        status: 'pending'
       });
 
+      // Generate QR code as data URL
+      const qrCodeDataUrl = await qr.toDataURL(secret.otpauth_url);
+      
       res.json({
         secret: secret.base32,
-        qrCode: secret.otpauth_url,
+        qrCode: qrCodeDataUrl,
         backupCodes: backupCodes
       });
     } else if (mfaMethod === 'sms' || mfaMethod === 'email') {
@@ -914,7 +922,7 @@ exports.setupMFA = async (req, res) => {
 exports.verifyMFA = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { token } = req.body;
+    const { token, secret, backupCodes } = req.body;
     const ipAddress = req.ip;
     const userAgent = req.get('User-Agent');
 
@@ -923,7 +931,22 @@ exports.verifyMFA = async (req, res) => {
 
     let isValid = false;
 
-    if (user.mfaMethod === 'totp') {
+    if (secret) {
+      // This is TOTP setup verification
+      isValid = speakeasy.totp.verify({
+        secret: secret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+
+      if (isValid) {
+        // Save TOTP settings
+        user.mfaSecret = secret;
+        user.mfaMethod = 'totp';
+        user.mfaBackupCodes = backupCodes;
+      }
+    } else if (user.mfaMethod === 'totp') {
       isValid = speakeasy.totp.verify({
         secret: user.mfaSecret,
         encoding: 'base32',
@@ -1014,6 +1037,76 @@ exports.disableMFA = async (req, res) => {
     res.json({ message: "MFA disabled successfully" });
   } catch (err) {
     console.error("MFA disable error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Generate QR code for MFA setup
+exports.generateMFAQR = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Generate new TOTP secret
+    const secret = speakeasy.generateSecret({
+      name: `StepStunner (${user.email})`,
+      issuer: 'StepStunner',
+      length: 32,
+      encoding: 'base32'
+    });
+
+    // Generate backup codes
+    const backupCodes = [];
+    for (let i = 0; i < 10; i++) {
+      backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
+    }
+
+    res.json({
+      secret: secret.base32,
+      qrCode: secret.otpauth_url,
+      backupCodes: backupCodes,
+      accountName: user.email,
+      issuer: 'StepStunner'
+    });
+  } catch (err) {
+    console.error("QR generation error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Auto-enable MFA (for QR code scanning)
+exports.autoEnableMFA = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { secret, backupCodes } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Save TOTP settings
+    user.mfaSecret = secret;
+    user.mfaMethod = 'totp';
+    user.mfaBackupCodes = backupCodes;
+    user.mfaEnabled = true;
+    user.mfaVerified = true;
+
+    await user.save();
+
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'mfa_enabled',
+      details: { method: 'totp', auto_enabled: true },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
+    res.json({ message: "MFA enabled successfully!" });
+  } catch (err) {
+    console.error("Auto-enable MFA error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

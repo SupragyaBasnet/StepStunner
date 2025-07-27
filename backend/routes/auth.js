@@ -126,5 +126,7 @@ router.delete(
 router.post("/mfa/setup", auth, authController.setupMFA);
 router.post("/mfa/verify", auth, authController.verifyMFA);
 router.post("/mfa/disable", auth, authController.disableMFA);
+router.post("/mfa/auto-enable", auth, authController.autoEnableMFA);
+router.get("/mfa/qr", auth, authController.generateMFAQR);
 
 module.exports = router;

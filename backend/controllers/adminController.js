@@ -151,7 +151,8 @@ exports.getOrders = async (req, res) => {
       ? { $or: [
           { 'user.name': { $regex: search, $options: 'i' } },
           { 'user.email': { $regex: search, $options: 'i' } },
-          { 'items.name': { $regex: search, $options: 'i' } }
+          { 'items.name': { $regex: search, $options: 'i' } },
+          { 'address': { $regex: search, $options: 'i' } }
         ] }
       : {};
     const orders = await Order.find(query)
