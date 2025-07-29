@@ -55,7 +55,7 @@ async function testMFAQR() {
       console.log('🔑 Setup Secret:', setupResponse.data.secret.substring(0, 10) + '...');
       console.log('📋 Setup Backup Codes:', setupResponse.data.backupCodes.length, 'codes');
     } else {
-      console.log('❌ MFA setup failed');
+      .log('❌ MFA setup failed');
     }
 
     console.log('\n🎉 MFA QR Code test completed!');
