@@ -9,18 +9,41 @@ const ProfileOverview: React.FC = () => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone ? user.phone.replace(/^\+977/, '') : '');
+  const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const nameRef = useRef<HTMLInputElement>(null);
 
-  // Check authentication
+  // Fetch user profile data
   useEffect(() => {
-    const token = localStorage.getItem('stepstunnerToken');
-    const userData = localStorage.getItem('stepstunnerUser');
-    if (!token || !userData) {
-      navigate('/login');
-      return;
-    }
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('stepstunnerToken');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        const response = await fetch('/api/auth/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setName(userData.name || '');
+          setEmail(userData.email || '');
+          setPhone(userData.phone ? userData.phone.replace(/^\+977/, '') : '');
+        } else {
+          console.error('Failed to fetch profile');
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    fetchProfile();
   }, [navigate]);
 
   useEffect(() => {
@@ -32,16 +55,15 @@ const ProfileOverview: React.FC = () => {
   }, [editMode]);
 
   const handleEdit = () => {
-    setName(user?.name || '');
-    setEmail(user?.email || '');
-    setPhone(user?.phone ? user.phone.replace(/^\+977/, '') : '');
     setEditMode(true);
   };
   const handleCancelEdit = () => setEditMode(false);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setSnackbar({ open: false, message: '', severity: 'success' });
+    
     try {
       const res = await fetch('/api/auth/profile', {
         method: 'PUT',
@@ -49,17 +71,33 @@ const ProfileOverview: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('stepstunnerToken')}`,
         },
-        body: JSON.stringify({ name, email, phone: '+977' + phone }),
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          phone: phone ? '+977' + phone : '+977' 
+        }),
       });
+      
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to update profile');
-      setSnackbar({ open: true, message: 'Profile updated! Please log in again.', severity: 'success' });
+      
+      setSnackbar({ open: true, message: 'Profile updated successfully!', severity: 'success' });
       setEditMode(false);
-      // Clear authentication state and redirect to login
-      logout();
-      navigate('/login');
+      
+      // Update local user data
+      if (setUser) {
+        setUser({
+          ...user,
+          name,
+          email,
+          phone: phone ? '+977' + phone : '+977'
+        });
+      }
+      
     } catch (err: any) {
       setSnackbar({ open: true, message: err.message || 'Failed to update profile', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,6 +170,7 @@ const ProfileOverview: React.FC = () => {
             <Button
               type="submit"
               variant="contained"
+              disabled={loading}
               sx={{
                 backgroundColor: '#d72660',
                 color: 'white',
@@ -143,7 +182,7 @@ const ProfileOverview: React.FC = () => {
               }}
               fullWidth
             >
-              Save Changes
+              {loading ? 'Saving...' : 'Save Changes'}
             </Button>
             <Button
               variant="text"

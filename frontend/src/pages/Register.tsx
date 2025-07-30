@@ -176,6 +176,31 @@ const Register: React.FC = () => {
       return;
     }
 
+    // Check if password is the same as email (username)
+    if (password.toLowerCase() === email.toLowerCase()) {
+      setSnackbar({
+        open: true,
+        message: "You cannot use your email address as your password",
+        severity: "error",
+      });
+      return;
+    }
+
+    // Check if password contains the user's name
+    const nameParts = name.toLowerCase().split(' ');
+    const hasNameInPassword = nameParts.some(part => 
+      part.length > 2 && password.toLowerCase().includes(part)
+    );
+    
+    if (hasNameInPassword) {
+      setSnackbar({
+        open: true,
+        message: "You cannot use your name as part of your password",
+        severity: "error",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       await register({ name, email, phone: '+977' + phone, password });
@@ -191,8 +216,20 @@ const Register: React.FC = () => {
         navigate("/login");
       }, 1000);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to create an account";
+      let errorMessage = "Failed to create an account";
+      
+      if (err instanceof Error) {
+        // Handle specific error cases
+        if (err.message.includes('email already exists') || err.message.includes('duplicate')) {
+          errorMessage = "An account with this email already exists";
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = "Network error. Please check your connection and try again";
+        } else if (err.message.includes('validation')) {
+          errorMessage = "Please check your input and try again";
+        } else {
+          errorMessage = err.message;
+        }
+      }
 
       setSnackbar({
         open: true,

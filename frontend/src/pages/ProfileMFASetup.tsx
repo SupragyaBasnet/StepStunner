@@ -86,10 +86,7 @@ const ProfileMFASetup: React.FC = () => {
         setBackupCodes(data.backupCodes);
         setSetupStep(2);
         
-        // Auto-enable MFA after QR code is generated
-        setTimeout(() => {
-          handleAutoEnableMFA(data.secret, data.backupCodes);
-        }, 2000); // Give user 2 seconds to scan
+        // Remove auto-enable - user must verify manually
       } else {
         setSuccess(data.message);
         setSetupStep(2);
@@ -99,32 +96,6 @@ const ProfileMFASetup: React.FC = () => {
       setSetupStep(0);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAutoEnableMFA = async (secret: string, backupCodes: string[]) => {
-    try {
-      const token = localStorage.getItem('stepstunnerToken');
-      const response = await fetch('/api/auth/mfa/auto-enable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          secret: secret, 
-          backupCodes: backupCodes 
-        })
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSuccess('MFA enabled successfully! QR code scanned and verified.');
-        setSetupStep(0);
-        fetchMFAStatus();
-      }
-    } catch (err) {
-      console.log('Auto-enable failed, user will need to verify manually');
     }
   };
 
@@ -365,7 +336,7 @@ const ProfileMFASetup: React.FC = () => {
             <Box>
               {selectedMethod === 'totp' && qrCode && (
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
+                  <Typography variant="h6" gutterBottom>
                     Scan QR Code with Your Phone
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
@@ -407,34 +378,51 @@ const ProfileMFASetup: React.FC = () => {
                       </Tooltip>
                     </Box>
                   </Paper>
-                  
-                  <Box sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
-                    <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
-                      MFA will be automatically enabled once you scan the QR code
-              </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      If you need to verify manually, enter the code from your app below
-              </Typography>
-                  </Box>
                 </Box>
               )}
-              
 
-              
-              <Box sx={{ mt: 3, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  MFA will be automatically enabled in a few seconds...
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                  Step 3: Verify Your Setup
                 </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setSetupStep(0);
-                  setVerificationToken('');
-                }}
-                sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
-              >
-                Cancel
-              </Button>
+                <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                  Enter the 6-digit code from your authenticator app to verify the setup
+                </Typography>
+                
+                <TextField
+                  fullWidth
+                  label="Verification Code"
+                  value={verificationToken}
+                  onChange={(e) => setVerificationToken(e.target.value)}
+                  placeholder="Enter 6-digit code"
+                  sx={{ mb: 3 }}
+                  inputProps={{ maxLength: 6 }}
+                />
+                
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleVerifyMFA}
+                    disabled={!verificationToken || verificationToken.length !== 6 || loading}
+                    sx={{ backgroundColor: '#d72660', color: 'white', '&:hover': { backgroundColor: '#b71c4a' } }}
+                  >
+                    {loading ? 'Verifying...' : 'Verify & Enable MFA'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setSetupStep(0);
+                      setVerificationToken('');
+                      setSelectedMethod('');
+                      setQrCode('');
+                      setSecret('');
+                      setBackupCodes([]);
+                    }}
+                    sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
               </Box>
             </Box>
           )}
