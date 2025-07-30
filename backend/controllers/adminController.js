@@ -245,7 +245,8 @@ exports.getDashboardStats = async (req, res) => {
     const recentOrders = await Order.find()
       .populate('user', 'name email')
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5)
+      .then(orders => orders.filter(order => order.user)); // Filter out orders with null user
     console.log('Recent orders count:', recentOrders.length);
     
     const lowStockProducts = await Product.find({ stock: { $lt: 10 } })
