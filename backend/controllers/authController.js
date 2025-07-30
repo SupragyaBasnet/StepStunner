@@ -421,11 +421,25 @@ exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, phone, email } = req.body;
+    
+    console.log('🔍 Profile update request:', { userId, name, phone, email });
+    
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
+    
     let emailChanged = false;
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
+    let changes = [];
+    
+    if (name && name !== user.name) {
+      user.name = name;
+      changes.push('name');
+    }
+    
+    if (phone && phone !== user.phone) {
+      user.phone = phone;
+      changes.push('phone');
+    }
+    
     if (email && email !== user.email) {
       // Check if new email is already taken
       const existing = await User.findOne({ email });
@@ -434,8 +448,17 @@ exports.updateProfile = async (req, res) => {
       }
       user.email = email;
       emailChanged = true;
+      changes.push('email');
     }
+    
+    if (changes.length === 0) {
+      return res.status(400).json({ message: "No changes to update" });
+    }
+    
     await user.save();
+    
+    console.log('✅ Profile updated successfully:', changes);
+    
     let response = {
       id: user._id,
       name: user.name,
@@ -443,15 +466,17 @@ exports.updateProfile = async (req, res) => {
       phone: user.phone,
       profileImage: user.profileImage,
     };
+    
     if (emailChanged) {
       const jwt = require("jsonwebtoken");
       const token = jwt.sign(
-        { id: user._id, isAdmin: user.isAdmin },
+        { id: user._id, email: user.email, role: user.role },
         process.env.JWT_SECRET || "your_jwt_secret_here",
         { expiresIn: "7d" }
       );
       response.token = token;
     }
+    
     res.json(response);
   } catch (err) {
     console.error("Update profile error:", err);
@@ -1075,38 +1100,4 @@ exports.generateMFAQR = async (req, res) => {
   }
 };
 
-// Auto-enable MFA (for QR code scanning)
-exports.autoEnableMFA = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { secret, backupCodes } = req.body;
-    const ipAddress = req.ip;
-    const userAgent = req.get('User-Agent');
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Save TOTP settings
-    user.mfaSecret = secret;
-    user.mfaMethod = 'totp';
-    user.mfaBackupCodes = backupCodes;
-    user.mfaEnabled = true;
-    user.mfaVerified = true;
-
-    await user.save();
-
-    await ActivityLog.logActivity({
-      userId: user._id,
-      action: 'mfa_enabled',
-      details: { method: 'totp', auto_enabled: true },
-      ipAddress,
-      userAgent,
-      status: 'success'
-    });
-
-    res.json({ message: "MFA enabled successfully!" });
-  } catch (err) {
-    console.error("Auto-enable MFA error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+// Auto-enable MFA endpoint removed - users must verify manually through the verify endpoint

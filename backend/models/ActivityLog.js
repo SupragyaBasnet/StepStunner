@@ -14,7 +14,8 @@ const activityLogSchema = new mongoose.Schema({
       'profile_update', 'order_create', 'order_view', 'cart_update',
       'payment_attempt', 'payment_success', 'payment_failure',
       'admin_action', 'security_event', 'api_access',
-      'mfa_enabled', 'mfa_disabled', 'mfa_verification', 'mfa_setup'
+      'mfa_enabled', 'mfa_disabled', 'mfa_verification', 'mfa_setup',
+      'request', 'get', 'post', 'put', 'delete'
     ]
   },
   details: { 
@@ -42,6 +43,14 @@ const activityLogSchema = new mongoose.Schema({
   },
   requestId: { 
     type: String 
+  },
+  method: {
+    type: String,
+    enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    default: 'GET'
+  },
+  url: {
+    type: String
   }
 }, {
   timestamps: true

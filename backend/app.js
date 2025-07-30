@@ -7,6 +7,7 @@ const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const { logRequest } = require('./middleware/logging');
 require('dotenv').config();
 
 const app = express();
@@ -88,6 +89,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Activity logging middleware
+app.use(logRequest);
 
 // CSRF protection
 const csrfProtection = csrf({

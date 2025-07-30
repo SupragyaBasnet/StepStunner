@@ -209,17 +209,57 @@ exports.deleteOrder = async (req, res) => {
 
 exports.getLogs = async (req, res) => {
   try {
-    const { search = '', page = 1, limit = 10 } = req.query;
-    const query = search
-      ? { action: { $regex: search, $options: 'i' } }
-      : {};
+    const { search = '', page = 1, limit = 10, user } = req.query;
+    
+    console.log('🔍 Fetching logs with filters:', { search, page, limit, user });
+    console.log('🔍 All query params:', req.query);
+    
+    // Build query
+    const query = {};
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { action: { $regex: search, $options: 'i' } },
+        { 'details.url': { $regex: search, $options: 'i' } },
+        { url: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // User filter
+    if (user && user !== 'all') {
+      // Convert string to ObjectId if needed
+      const mongoose = require('mongoose');
+      try {
+        query.userId = mongoose.Types.ObjectId(user);
+        console.log(`👤 Filtering by user ID: ${user}`);
+      } catch (error) {
+        console.log(`❌ Invalid user ID format: ${user}`);
+        // Try as string, but also check if it's a valid ObjectId string
+        if (mongoose.Types.ObjectId.isValid(user)) {
+          query.userId = user;
+        } else {
+          console.log(`❌ Invalid user ID: ${user}`);
+        }
+      }
+    }
+    
+    console.log('🔍 Final query:', JSON.stringify(query, null, 2));
+    
     const logs = await ActivityLog.find(query)
+      .populate('userId', 'name email')
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .sort({ createdAt: -1 });
+      .sort({ timestamp: -1 });
+      
     const total = await ActivityLog.countDocuments(query);
+    
+    console.log(`📊 Found ${logs.length} logs out of ${total} total`);
+    console.log(`👥 Users in logs:`, logs.map(log => log.userId?.email || 'No user').slice(0, 5));
+    
     res.json({ logs, total });
   } catch (err) {
+    console.error('❌ Error fetching logs:', err);
     res.status(500).json({ message: 'Failed to fetch logs', error: err.message });
   }
 }; 
@@ -294,6 +334,100 @@ exports.bulkDeleteProducts = async (req, res) => {
     res.json({ message: `${result.deletedCount} products deleted successfully` });
   } catch (err) {
     res.status(500).json({ message: 'Failed to bulk delete products', error: err.message });
+  }
+};
+
+// Create sample logs for testing
+exports.createSampleLogs = async (req, res) => {
+  try {
+    const users = await User.find().limit(5);
+    
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'No users found. Please create users first.' });
+    }
+    
+    // Clear existing sample logs
+    await ActivityLog.deleteMany({});
+    console.log('🗑️ Cleared existing logs');
+    
+    const sampleLogs = [];
+    
+    const actions = ['login', 'logout', 'register', 'password_change', 'profile_update', 'order_create', 'payment_success', 'product_view', 'user_management', 'log_view'];
+    const methods = ['GET', 'POST', 'PUT', 'DELETE'];
+    const urls = [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/logout',
+      '/api/users/profile',
+      '/api/users/password',
+      '/api/products',
+      '/api/products/123',
+      '/api/orders',
+      '/api/orders/create',
+      '/api/admin/dashboard',
+      '/api/admin/users',
+      '/api/admin/orders',
+      '/api/admin/logs',
+      '/api/admin/products',
+      '/api/cart/add',
+      '/api/cart/remove',
+      '/api/payment/process'
+    ];
+    
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1'
+    ];
+    
+    console.log(`📝 Creating sample logs for ${users.length} users...`);
+    
+    for (let i = 0; i < 50; i++) {
+      const user = users[Math.floor(Math.random() * users.length)];
+      const action = actions[Math.floor(Math.random() * actions.length)];
+      const method = methods[Math.floor(Math.random() * methods.length)];
+      const url = urls[Math.floor(Math.random() * urls.length)];
+      const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+      
+      const log = {
+        userId: user._id, // Always include user ID
+        action: action,
+        method: method,
+        url: url,
+        details: {
+          url: url,
+          method: method,
+          userAgent: userAgent,
+          referer: 'http://localhost:3000',
+          responseStatus: 200,
+          requestBody: method === 'POST' || method === 'PUT',
+          userEmail: user.email,
+          userName: user.name
+        },
+        ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
+        status: 'success',
+        userAgent: userAgent,
+        timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // Random time in last 7 days
+      };
+      
+      sampleLogs.push(log);
+    }
+    
+    await ActivityLog.insertMany(sampleLogs);
+    console.log(`✅ Created ${sampleLogs.length} sample logs`);
+    
+    // Verify the logs were created with proper user IDs
+    const createdLogs = await ActivityLog.find().populate('userId', 'name email');
+    console.log(`📊 Created logs with users: ${createdLogs.filter(log => log.userId).length}/${createdLogs.length} have user IDs`);
+    
+    res.json({ 
+      message: `${sampleLogs.length} sample logs created successfully`,
+      usersWithLogs: createdLogs.filter(log => log.userId).map(log => log.userId.email)
+    });
+  } catch (err) {
+    console.error('Error creating sample logs:', err);
+    res.status(500).json({ message: 'Failed to create sample logs', error: err.message });
   }
 };
 
