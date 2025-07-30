@@ -12,7 +12,7 @@ interface DashboardStats {
 
 interface RecentOrder {
   _id: string;
-  user: {
+  user?: {
     name: string;
     email: string;
   };
@@ -109,12 +109,22 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  const stats = data ? [
-    { label: 'Total Users', value: data.stats.totalUsers },
-    { label: 'Total Products', value: data.stats.totalProducts },
-    { label: 'Total Orders', value: data.stats.totalOrders },
-    { label: 'Total Revenue', value: `Rs ${data.stats.totalRevenue.toFixed(2)}` },
+  const stats = data && data.stats ? [
+    { label: 'Total Users', value: data.stats.totalUsers || 0 },
+    { label: 'Total Products', value: data.stats.totalProducts || 0 },
+    { label: 'Total Orders', value: data.stats.totalOrders || 0 },
+    { label: 'Total Revenue', value: `Rs ${(data.stats.totalRevenue || 0).toFixed(2)}` },
   ] : [];
+
+  if (!data) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="info">
+          No dashboard data available. Please try refreshing the page.
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ 
@@ -215,7 +225,7 @@ const AdminDashboard: React.FC = () => {
                     <ListItemText
                       primary={
                         <Typography variant="subtitle1" fontWeight={600}>
-                          {order.user.name} - Rs {order.total.toFixed(2)}
+                          {order.user?.name || 'Unknown User'} - Rs {order.total.toFixed(2)}
                         </Typography>
                       }
                       secondary={

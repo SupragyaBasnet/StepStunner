@@ -365,7 +365,7 @@ const ProfileMFASetup: React.FC = () => {
             <Box>
               {selectedMethod === 'totp' && qrCode && (
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
-                  <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom>
                     Scan QR Code with Your Phone
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
@@ -411,10 +411,10 @@ const ProfileMFASetup: React.FC = () => {
                   <Box sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
                     <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
                       MFA will be automatically enabled once you scan the QR code
-                    </Typography>
+              </Typography>
                     <Typography variant="body2" color="text.secondary">
                       If you need to verify manually, enter the code from your app below
-                    </Typography>
+              </Typography>
                   </Box>
                 </Box>
               )}
@@ -425,16 +425,16 @@ const ProfileMFASetup: React.FC = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   MFA will be automatically enabled in a few seconds...
                 </Typography>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setSetupStep(0);
-                    setVerificationToken('');
-                  }}
-                  sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
-                >
-                  Cancel
-                </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setSetupStep(0);
+                  setVerificationToken('');
+                }}
+                sx={{ borderColor: '#d72660', color: '#d72660', '&:hover': { backgroundColor: 'rgba(215,38,96,0.08)', borderColor: '#d72660', color: '#d72660' } }}
+              >
+                Cancel
+              </Button>
               </Box>
             </Box>
           )}

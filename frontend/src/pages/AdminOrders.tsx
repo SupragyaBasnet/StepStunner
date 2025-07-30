@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 
 interface Order {
   _id: string;
-  user: {
+  user?: {
     _id: string;
     name: string;
     email: string;
@@ -64,10 +64,13 @@ const AdminOrders: React.FC = () => {
       
       if (!res.ok) {
         console.error('Failed to fetch orders:', res.statusText);
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Error details:', errorData);
         return;
       }
       
       const data = await res.json();
+      console.log('Orders API response:', data);
       setOrders(data.orders || []);
       setTotal(data.total || 0);
     } catch (error) {
@@ -172,7 +175,7 @@ const AdminOrders: React.FC = () => {
               {orders.map((order) => (
                 <TableRow key={order._id}>
                   <TableCell>{order._id}</TableCell>
-                  <TableCell>{order.user.name}</TableCell>
+                  <TableCell>{order.user?.name || 'Unknown User'}</TableCell>
                   <TableCell>{order.address || 'No address'}</TableCell>
                   <TableCell>Rs {order.total.toFixed(2)}</TableCell>
                   <TableCell>{order.status}</TableCell>
@@ -213,7 +216,7 @@ const AdminOrders: React.FC = () => {
           {viewOrder && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Typography><b>Order ID:</b> {viewOrder._id}</Typography>
-              <Typography><b>User:</b> {viewOrder.user.name}</Typography>
+              <Typography><b>User:</b> {viewOrder.user?.name || 'Unknown User'}</Typography>
               <Typography><b>Address:</b> {viewOrder.address || 'No address provided'}</Typography>
               <Typography><b>Payment Method:</b> {viewOrder.paymentMethod || 'Not specified'}</Typography>
               <Typography><b>Total:</b> Rs {viewOrder.total.toFixed(2)}</Typography>

@@ -7,7 +7,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../context/AuthContext';
 
 interface User {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   email: string;
   phone: string;
@@ -121,15 +122,28 @@ const AdminUsers: React.FC = () => {
     if (!deleteUser) return;
     setDeleteLoading(true);
     const token = localStorage.getItem('stepstunnerToken');
-    await fetch(`/api/admin/users/${deleteUser.id}`, { 
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
+    const userId = deleteUser.id || deleteUser._id;
+    if (!userId) {
+      setDeleteLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
       }
-    });
-    setDeleteLoading(false);
-    closeDelete();
-    fetchUsers();
+      closeDelete();
+      fetchUsers();
+    } catch (error) {
+      console.error('Delete user error:', error);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -165,7 +179,7 @@ const AdminUsers: React.FC = () => {
             </TableHead>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.id || user._id}>
                   <TableCell>
                     <Avatar 
                       src={user.profileImage || undefined}
