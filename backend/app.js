@@ -19,14 +19,14 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    ttl: 24 * 60 * 60, // 1 day
+    ttl: 7 * 24 * 60 * 60, // 7 days
     autoRemove: 'native'
   }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000 // 1 day
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   },
   name: 'sessionId' // Change default session name
 }));

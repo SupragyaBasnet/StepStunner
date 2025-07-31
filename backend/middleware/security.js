@@ -24,7 +24,7 @@ const createRateLimiter = (windowMs, max, message) => {
 // Specific rate limiters
 const authLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
-  50, // 50 attempts (increased from 5 for testing)
+  15, // 15 attempts
   'Too many authentication attempts. Please try again in 15 minutes.'
 );
 
@@ -65,7 +65,7 @@ const bruteForcePrevention = (req, res, next) => {
   req.app.locals.bruteForceStore.set(key, attempts);
   
   // Block if too many attempts
-  if (attempts.count > 5) {
+  if (attempts.count > 15) {
     return res.status(429).json({
       message: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.'
     });
@@ -81,13 +81,13 @@ const sessionConfig = {
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/StepStunner',
-    ttl: 24 * 60 * 60, // 1 day
+    ttl: 7 * 24 * 60 * 60, // 7 days
     autoRemove: 'native'
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     sameSite: 'strict'
   },
   name: 'StepStunner_session'
