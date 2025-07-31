@@ -270,35 +270,89 @@ exports.login = async (req, res) => {
     // Reset failed login attempts on successful login
     await user.resetFailedAttempts();
 
-    // Log successful login
+    // Generate OTP for email verification
+    const loginOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    
+    // Store OTP in user document
+    user.loginOtp = loginOtp;
+    user.loginOtpExpiry = otpExpiry;
+    await user.save();
+
+    // Send OTP email
+    try {
+      console.log('📧 Sending OTP email to:', user.email);
+      console.log('🔧 Using Gmail config:', {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS ? '***configured***' : 'NOT_CONFIGURED'
+      });
+      
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS,
+        },
+      });
+      
+      const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: user.email,
+        subject: "StepStunner Login Verification OTP",
+        text: `Your login verification OTP is: ${loginOtp}. It is valid for 5 minutes.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #d72660;">StepStunner Login Verification</h2>
+            <p>Hello ${user.name},</p>
+            <p>Your login verification OTP is:</p>
+            <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+              <h1 style="color: #d72660; font-size: 32px; margin: 0;">${loginOtp}</h1>
+            </div>
+            <p>This OTP is valid for 5 minutes.</p>
+            <p>If you didn't attempt to login, please ignore this email.</p>
+            <p>Best regards,<br>StepStunner Team</p>
+          </div>
+        `
+      };
+      
+      const result = await transporter.sendMail(mailOptions);
+      console.log('✅ Email sent successfully:', result.messageId);
+    } catch (emailError) {
+      console.error('❌ Email sending error:', emailError);
+      console.error('📧 Email config:', {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS ? '***configured***' : 'NOT_CONFIGURED'
+      });
+      // Continue with login even if email fails
+    }
+
+    // Log OTP sent
     await ActivityLog.logActivity({
       userId: user._id,
-      action: 'login',
-      details: { loginMethod: 'password' },
+      action: 'login_otp_sent',
+      details: { email: user.email },
       ipAddress,
       userAgent,
       status: 'success'
     });
 
-    // Generate JWT token
-    const token = jwt.sign(
+    // Generate temporary token for OTP verification
+    const tempToken = jwt.sign(
       { 
         id: user._id, 
         email: user.email,
         role: user.role,
-        passwordChangedAt: user.passwordChangedAt
+        passwordChangedAt: user.passwordChangedAt,
+        requiresOtp: true
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '10m' } // Short expiry for OTP verification
     );
 
-    // Set session data
-    req.session.userId = user._id;
-    req.session.userRole = user.role;
-
     res.json({
-      message: "Login successful",
-      token,
+      message: "Login OTP sent to your email",
+      requiresOtp: true,
+      tempToken,
       user: {
         id: user._id,
         name: user.name,
@@ -350,6 +404,109 @@ const sendOtpEmail = async (to, otp) => {
             subject: "Your StepStunner Password Reset OTP",
     text: `Your OTP for password reset is: ${otp}. It is valid for 5 minutes.`,
   });
+};
+
+exports.verifyLoginOtp = async (req, res) => {
+  try {
+    const { otp, tempToken } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    if (!otp || !tempToken) {
+      return res.status(400).json({ message: "OTP and temporary token are required" });
+    }
+
+    // Verify temporary token
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({ message: "Invalid or expired temporary token" });
+    }
+
+    if (!decoded.requiresOtp) {
+      return res.status(400).json({ message: "Invalid token for OTP verification" });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if OTP is expired
+    if (!user.loginOtpExpiry || new Date() > user.loginOtpExpiry) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'login_otp_verification',
+        details: { reason: 'otp_expired' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({ message: "OTP has expired. Please login again." });
+    }
+
+    // Verify OTP
+    if (user.loginOtp !== otp) {
+      await ActivityLog.logActivity({
+        userId: user._id,
+        action: 'login_otp_verification',
+        details: { reason: 'invalid_otp' },
+        ipAddress,
+        userAgent,
+        status: 'failure'
+      });
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // Clear OTP after successful verification
+    user.loginOtp = undefined;
+    user.loginOtpExpiry = undefined;
+    await user.save();
+
+    // Generate final JWT token
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: user.email,
+        role: user.role,
+        passwordChangedAt: user.passwordChangedAt
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Set session data
+    req.session.userId = user._id;
+    req.session.userRole = user.role;
+
+    // Log successful login
+    await ActivityLog.logActivity({
+      userId: user._id,
+      action: 'login',
+      details: { loginMethod: 'password_otp' },
+      ipAddress,
+      userAgent,
+      status: 'success'
+    });
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profileImage,
+        mfaEnabled: user.mfaEnabled,
+        mfaMethod: user.mfaMethod
+      }
+    });
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 exports.forgotPassword = async (req, res) => {

@@ -24,7 +24,7 @@ FRONTEND_URL=http://localhost:3000
 
 # Email Configuration (for password reset, MFA)
 GMAIL_USER=your_email@gmail.com
-GMAIL_PASS=your_app_password
+GMAIL_PASS=wkch qqaw qfwy wfkd
 
 # reCAPTCHA Configuration
 RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here

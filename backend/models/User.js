@@ -13,6 +13,12 @@ const userSchema = new mongoose.Schema({
   otpExpiry: {
     type: Date,
   },
+  loginOtp: {
+    type: String,
+  },
+  loginOtpExpiry: {
+    type: Date,
+  },
   profileImage: { type: String },
   
   // Security fields
@@ -69,10 +75,9 @@ userSchema.methods.isAccountLocked = function() {
 // Increment failed login attempts
 userSchema.methods.incrementFailedAttempts = function() {
   this.failedLoginAttempts += 1;
-  
-      // Lock account after 15 failed attempts for 15 minutes
+        // Lock account after 15 failed attempts for 15 minutes
     if (this.failedLoginAttempts >= 15) {
-    this.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    this.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000); 
   }
   
   return this.save();

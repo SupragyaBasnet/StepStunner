@@ -24,6 +24,7 @@ require("dotenv").config();
 
 router.post("/register", authLimiter, validatePasswordStrength, authController.register);
 router.post("/login", authLimiter, authController.login);
+router.post("/verify-login-otp", authLimiter, authController.verifyLoginOtp);
 router.get("/profile", auth, authController.profile);
 router.post("/forgot-password", authLimiter, authController.forgotPassword);
 router.post("/verify-otp", authLimiter, authController.verifyOtp);
