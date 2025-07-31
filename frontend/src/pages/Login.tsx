@@ -24,12 +24,15 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaToken, setMfaToken] = useState('');
+  const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [requiresMFA, setRequiresMFA] = useState(false);
+  const [requiresOtp, setRequiresOtp] = useState(false);
   const [mfaMethod, setMfaMethod] = useState('');
-  const { login, isAuthenticated, user, loading: authLoading } = useAuth();
+  const [tempToken, setTempToken] = useState('');
+  const { login, isAuthenticated, user, loading: authLoading, setUser } = useAuth();
   const navigate = useNavigate();
 
   // Add state for snackbar
@@ -72,13 +75,42 @@ const Login: React.FC = () => {
       setError('');
       setLoading(true);
 
-      // Use AuthContext login function instead of direct API call
-      const userData = await login(email, password, recaptchaToken);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          recaptchaToken
+        }),
+      });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Check if OTP is required
+      if (data.requiresOtp) {
+        setRequiresOtp(true);
+        setTempToken(data.tempToken);
+        setSnackbar({ open: true, message: 'OTP sent to your email!', severity: 'success' });
+        return;
+      }
+
+      // Check if MFA is required
+      if (data.requiresMFA) {
+        setRequiresMFA(true);
+        setMfaMethod(data.mfaMethod);
+        setSnackbar({ open: true, message: 'MFA verification required!', severity: 'success' });
+        return;
+      }
+
+      // Direct login successful
       setSnackbar({ open: true, message: 'Login successful!', severity: 'success' });
       setTimeout(() => {
-        // Check if user is admin and navigate accordingly
-        if (userData.role === 'admin') {
+        if (data.user && data.user.role === 'admin') {
           navigate('/admin');
         } else {
           navigate('/');
@@ -86,6 +118,63 @@ const Login: React.FC = () => {
       }, 1000);
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim()) {
+      setError('Please enter your OTP');
+      return;
+    }
+
+    try {
+      setError('');
+      setLoading(true);
+
+      const response = await fetch("/api/auth/verify-login-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          otp,
+          tempToken
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "OTP verification failed");
+      }
+
+      // Store authentication data
+      const userData = { 
+        id: data.user.id, 
+        name: data.user.name, 
+        email: data.user.email, 
+        phone: data.user.phone, 
+        profileImage: data.user.profileImage,
+        role: data.user.role 
+      };
+      
+      // Update AuthContext
+      setUser(userData);
+      localStorage.setItem("stepstunnerToken", data.token);
+      localStorage.setItem("stepstunnerUser", JSON.stringify(userData));
+      localStorage.removeItem("profileImage");
+
+      setSnackbar({open: true, message: 'Login successful!', severity: 'success'});
+      setTimeout(() => {
+        if (data.user && data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }, 500);
+    } catch (err) {
+      setError('Invalid OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -176,7 +265,7 @@ const Login: React.FC = () => {
         ) : (
           <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
             <Typography variant="h4" component="h1" gutterBottom align="center">
-              {requiresMFA ? 'Two-Factor Authentication' : 'Sign In'}
+              {requiresMFA ? 'Two-Factor Authentication' : requiresOtp ? 'Email Verification' : 'Sign In'}
             </Typography>
 
             {requiresMFA && (
@@ -196,13 +285,30 @@ const Login: React.FC = () => {
               </Box>
             )}
 
+            {requiresOtp && (
+              <Box sx={{ mb: 3 }}>
+                <Stepper activeStep={1} sx={{ mb: 3 }}>
+                  <Step>
+                    <StepLabel>Login</StepLabel>
+                  </Step>
+                  <Step>
+                    <StepLabel>Email Verification</StepLabel>
+                  </Step>
+                </Stepper>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Security sx={{ mr: 1 }} />
+                  Please enter the 6-digit OTP sent to your email to complete login.
+                </Alert>
+              </Box>
+            )}
+
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
 
-            {!requiresMFA ? (
+            {!requiresMFA && !requiresOtp ? (
               // Step 1: Email and Password
               <Box component="form" onSubmit={handleSubmit}>
                 <TextField
@@ -273,6 +379,45 @@ const Login: React.FC = () => {
                     </Link>
                   </Typography>
                 </Box>
+              </Box>
+            ) : requiresOtp ? (
+              // Step 2: OTP Verification
+              <Box component="form" onSubmit={handleOtpVerification}>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="otp"
+                  label="Email Verification Code"
+                  name="otp"
+                  autoComplete="off"
+                  autoFocus
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Enter 6-digit OTP sent to your email"
+                  inputProps={{ maxLength: 6 }}
+                />
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                  disabled={loading}
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+                  onClick={() => {
+                    setRequiresOtp(false);
+                    setOtp('');
+                    setTempToken('');
+                  }}
+                >
+                  Back to Login
+                </Button>
               </Box>
             ) : (
               // Step 2: MFA Verification
